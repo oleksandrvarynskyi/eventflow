@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.attendee.registrationToken",
+    "label": "Add column \"registrationToken\" to \"attendee\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "registrationToken",
+        "table": "attendee"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"registrationToken\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "attendee",
+          "registrationToken"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"registrationToken\"",
+        "sql": "ALTER TABLE \"public\".\"attendee\" ADD COLUMN \"registrationToken\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"registrationToken\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "attendee",
+          "registrationToken"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.attendee.attendee_registrationToken_key",
+    "label": "Add unique constraint on \"attendee\" (registrationToken)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "attendee_registrationToken_key",
+        "table": "attendee"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"attendee_registrationToken_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "attendee_registrationToken_key",
+          "public",
+          "\"public\".\"attendee\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"attendee_registrationToken_key\"",
+        "sql": "ALTER TABLE \"public\".\"attendee\" ADD CONSTRAINT \"attendee_registrationToken_key\" UNIQUE (\"registrationToken\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"attendee_registrationToken_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "attendee_registrationToken_key",
+          "public",
+          "\"public\".\"attendee\""
+        ]
+      }
+    ]
+  }
+]

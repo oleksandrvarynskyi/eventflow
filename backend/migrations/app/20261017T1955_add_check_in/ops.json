@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.attendee.checkedInAt",
+    "label": "Add column \"checkedInAt\" to \"attendee\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "checkedInAt",
+        "table": "attendee"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"checkedInAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "attendee",
+          "checkedInAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"checkedInAt\"",
+        "sql": "ALTER TABLE \"public\".\"attendee\" ADD COLUMN \"checkedInAt\" timestamptz"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"checkedInAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "attendee",
+          "checkedInAt"
+        ]
+      }
+    ]
+  }
+]

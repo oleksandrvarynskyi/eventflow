@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: eventflow-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: eventflow
+      POSTGRES_PASSWORD: eventflow_dev
+      POSTGRES_DB: eventflow
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - eventflow_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  eventflow_postgres_data:

@@ -1,0 +1,61 @@
+// use prisma-8
+
+enum UserRole {
+  ADMIN
+  EVENT_MANAGER
+  RECEPTIONIST
+}
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  name      String
+  users     User[]
+  events    Event[]
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+}
+
+model User {
+  id             Int          @id @default(autoincrement())
+  email          String       @unique
+  name           String?
+  role           UserRole     @default(EVENT_MANAGER)
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId Int
+
+  createdAt      TimestamptzString @default(now())
+  updatedAt      temporal.updatedAtString()
+}
+
+model Event {
+  id             Int          @id @default(autoincrement())
+  name           String
+  description    String?
+  location       String?
+  startsAt       TimestamptzString
+  endsAt         TimestamptzString?
+  attendees      Attendee[]
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  organizationId Int
+
+  createdAt      TimestamptzString @default(now())
+  updatedAt      temporal.updatedAtString()
+}
+
+model Attendee {
+  id                Int     @id @default(autoincrement())
+  firstName         String
+  lastName          String
+  email             String
+  registrationToken String? @unique
+
+  event             Event @relation(fields: [eventId], references: [id])
+  eventId           Int
+
+  checkedInAt       TimestamptzString?
+
+  createdAt         TimestamptzString @default(now())
+  updatedAt         temporal.updatedAtString()
+}

@@ -1,0 +1,6 @@
+
+# AI-generated tooling instructions
+backend/.agents/
+backend/.claude/
+backend/.cursor/
+backend/.devin/
