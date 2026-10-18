@@ -42,7 +42,17 @@ export default function QRScanner({ onScan }: QRScannerProps) {
           { facingMode: "environment" },
           {
             fps: 10,
-            qrbox: { width: 250, height: 250 },
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+              const size = Math.min(
+                220,
+                Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8),
+              );
+
+              return {
+                width: size,
+                height: size,
+              };
+            },
           },
           (decodedText) => {
             if (cancelled || scannedRef.current) return;
@@ -81,8 +91,11 @@ export default function QRScanner({ onScan }: QRScannerProps) {
   }, []);
 
   return (
-    <div className="mt-6">
-      <div id="qr-reader" className="overflow-hidden rounded-xl bg-black" />
+    <div className="w-full">
+      <div
+        id="qr-reader"
+        className="w-full overflow-hidden rounded-xl border border-slate-700 bg-black"
+      />
 
       {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
     </div>
