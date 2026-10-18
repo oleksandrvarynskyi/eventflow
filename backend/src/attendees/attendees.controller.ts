@@ -1,11 +1,14 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Header,
   NotFoundException,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   StreamableFile,
 } from '@nestjs/common';
@@ -47,6 +50,48 @@ export class AttendeesController {
     });
   }
 
+  // PATCH /api/events/:eventId/attendees/:attendeeId
+  @Patch(':attendeeId')
+  async update(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Param('attendeeId', ParseIntPipe) attendeeId: number,
+    @Body()
+    body: {
+      firstName: string;
+      lastName: string;
+      email: string;
+    },
+  ) {
+    const firstName = body?.firstName?.trim();
+    const lastName = body?.lastName?.trim();
+    const email = body?.email?.trim();
+
+    if (!firstName || !lastName || !email) {
+      throw new BadRequestException(
+        'First name, last name and email are required',
+      );
+    }
+
+    const attendees = await db.orm.public.Attendee.all();
+
+    const attendee = attendees.find(
+      (item) => item.id === attendeeId && item.eventId === eventId,
+    );
+
+    if (!attendee) {
+      throw new NotFoundException('Attendee not found');
+    }
+
+    return db.orm.public.Attendee.where({
+      id: attendeeId,
+      eventId,
+    }).update({
+      firstName,
+      lastName,
+      email,
+    });
+  }
+
   // GET /api/events/:eventId/attendees/:attendeeId/qr
   @Get(':attendeeId/qr')
   @Header('Content-Type', 'image/png')
@@ -76,5 +121,33 @@ export class AttendeesController {
     });
 
     return new StreamableFile(qrBuffer);
+  }
+
+  // DELETE /api/events/:eventId/attendees/:attendeeId
+  @Delete(':attendeeId')
+  async remove(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Param('attendeeId', ParseIntPipe) attendeeId: number,
+  ) {
+    const attendees = await db.orm.public.Attendee.all();
+
+    const attendee = attendees.find(
+      (item) => item.id === attendeeId && item.eventId === eventId,
+    );
+
+    if (!attendee) {
+      throw new NotFoundException('Attendee not found');
+    }
+
+    await db.orm.public.Attendee.where({
+      id: attendeeId,
+      eventId,
+    }).delete();
+
+    return {
+      success: true,
+      message: 'Attendee deleted successfully',
+      attendeeId,
+    };
   }
 }
