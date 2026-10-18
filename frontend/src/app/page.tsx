@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import QRScanner from "@/components/QRScanner";
 
 type CheckInResult = {
@@ -10,12 +10,61 @@ type CheckInResult = {
   checkedInAt?: string;
 };
 
+type Attendee = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  checkedInAt: string | null;
+};
+
 export default function Home() {
   const [token, setToken] = useState("");
   const [result, setResult] = useState<CheckInResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const loadAttendees = useCallback(async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:4000/api/events/1/attendees",
+        { cache: "no-store" },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load attendees");
+      }
+
+      const data: Attendee[] = await response.json();
+      setAttendees(data);
+    } catch (error) {
+      console.error("Failed to load attendees:", error);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadAttendees();
+  }, [loadAttendees]);
+
+  const totalAttendees = attendees.length;
+
+  const checkedIn = attendees.filter(
+    (attendee) => attendee.checkedInAt !== null,
+  ).length;
+
+  const expected = totalAttendees - checkedIn;
+
+  const recentCheckIns = attendees
+    .filter((attendee) => attendee.checkedInAt !== null)
+    .sort(
+      (a, b) =>
+        new Date(b.checkedInAt!).getTime() - new Date(a.checkedInAt!).getTime(),
+    )
+    .slice(0, 5);
 
   async function handleCheckIn(scannedToken?: string) {
     const ticketToken = scannedToken ?? token;
@@ -46,6 +95,8 @@ export default function Home() {
 
       const data: CheckInResult = await response.json();
       setResult(data);
+
+      await loadAttendees();
     } catch {
       setError("Unable to connect to the server.");
     } finally {
@@ -64,6 +115,29 @@ export default function Home() {
           <h1 className="text-3xl font-bold">Reception Dashboard</h1>
 
           <p className="mt-2 text-slate-400">Calgary Tech Meetup</p>
+
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-center">
+              <p className="text-xs text-slate-400">Total</p>
+              <p className="mt-2 text-2xl font-bold">
+                {statsLoading ? "..." : totalAttendees}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-green-800 bg-green-950/40 p-4 text-center">
+              <p className="text-xs text-green-400">Checked In</p>
+              <p className="mt-2 text-2xl font-bold text-green-400">
+                {statsLoading ? "..." : checkedIn}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-blue-800 bg-blue-950/40 p-4 text-center">
+              <p className="text-xs text-blue-400">Expected</p>
+              <p className="mt-2 text-2xl font-bold text-blue-400">
+                {statsLoading ? "..." : expected}
+              </p>
+            </div>
+          </div>
         </div>
 
         <label
@@ -135,6 +209,41 @@ export default function Home() {
             {error}
           </div>
         )}
+        <div className="mt-8 border-t border-slate-700 pt-6">
+          <h2 className="text-lg font-semibold">Recent Check-ins</h2>
+
+          {recentCheckIns.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-400">No check-ins yet.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {recentCheckIns.map((attendee) => (
+                <div
+                  key={attendee.id}
+                  className="flex items-center justify-between rounded-lg bg-slate-950 px-4 py-3"
+                >
+                  <div>
+                    <p className="font-medium">
+                      {attendee.firstName} {attendee.lastName}
+                    </p>
+                    <p className="text-xs text-green-400">Checked In</p>
+                  </div>
+
+                  <span className="text-sm text-slate-400">
+                    {attendee.checkedInAt
+                      ? new Date(attendee.checkedInAt).toLocaleTimeString(
+                          "en-CA",
+                          {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          },
+                        )
+                      : ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
