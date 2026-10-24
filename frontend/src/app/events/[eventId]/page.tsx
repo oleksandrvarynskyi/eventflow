@@ -70,7 +70,7 @@ export default function PublicEventPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/events/${event.id}/attendees`,
+        `http://localhost:4000/api/events/${event.id}/register`,
         {
           method: "POST",
           headers: {
@@ -88,9 +88,15 @@ export default function PublicEventPage() {
         throw new Error("Registration failed");
       }
 
-      const attendee: { id: number } = await response.json();
+      const data: {
+        success: boolean;
+        message: string;
+        attendee: {
+          id: number;
+        };
+      } = await response.json();
 
-      setRegisteredAttendeeId(attendee.id);
+      setRegisteredAttendeeId(data.attendee.id);
       setRegistered(true);
     } catch (error) {
       console.error("Registration error:", error);

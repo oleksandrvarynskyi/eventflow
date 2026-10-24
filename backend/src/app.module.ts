@@ -1,3 +1,4 @@
+import { ConfigModule } from '@nestjs/config';
 import { Module } from '@nestjs/common';
 import { createObserveModule } from '@nestjs/observe';
 import { AppController } from './app.controller.js';
@@ -6,11 +7,15 @@ import { OrganizationsModule } from './organizations/organizations.module.js';
 import { EventsModule } from './events/events.module.js';
 import { AttendeesModule } from './attendees/attendees.module.js';
 import { CheckInModule } from './check-in/check-in.module.js';
+import { EmailModule } from './email/email.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     // Distributed tracing, auto-correlated logs, request/job metrics, error
     // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
     ObserveModule.forRoot({
@@ -22,6 +27,7 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     EventsModule,
     AttendeesModule,
     CheckInModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
