@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 
 type QRScannerProps = {
-  onScan: (token: string) => void;
+  onScan: (token: string) => void | Promise<void>;
 };
 
 export default function QRScanner({ onScan }: QRScannerProps) {
   const onScanRef = useRef(onScan);
-  const scannedRef = useRef(false);
+  const processingRef = useRef(false);
+  const lastScanRef = useRef<string | null>(null);
+  const lastDetectedAtRef = useRef(0);
 
   const [error, setError] = useState("");
 
@@ -55,12 +57,49 @@ export default function QRScanner({ onScan }: QRScannerProps) {
             },
           },
           (decodedText) => {
-            if (cancelled || scannedRef.current) return;
+            if (cancelled) return;
 
-            scannedRef.current = true;
-            onScanRef.current(decodedText);
+            const now = Date.now();
+
+            // If the QR code was absent for at least 1.5 seconds,
+            // allow the same ticket to be scanned again.
+            if (now - lastDetectedAtRef.current > 1500) {
+              lastScanRef.current = null;
+            }
+
+            lastDetectedAtRef.current = now;
+
+            if (processingRef.current) return;
+
+            // Ignore the same QR code while it remains visible.
+            if (lastScanRef.current === decodedText) {
+              return;
+            }
+
+            processingRef.current = true;
+            lastScanRef.current = decodedText;
+
+            void Promise.resolve()
+              .then(() => onScanRef.current(decodedText))
+              .catch((error) => {
+                console.error("QR check-in failed:", error);
+              })
+              .finally(() => {
+                processingRef.current = false;
+              });
           },
-          () => {},
+          () => {
+            if (cancelled) return;
+
+            // Unlock the previous ticket only after the QR code
+            // has not been detected for at least 1.5 seconds.
+            if (
+              !processingRef.current &&
+              Date.now() - lastDetectedAtRef.current > 1500
+            ) {
+              lastScanRef.current = null;
+            }
+          },
         );
 
         if (cancelled && scanner.isScanning) {

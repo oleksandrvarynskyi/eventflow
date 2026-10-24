@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import QRScanner from "@/components/QRScanner";
 
 type ReceptionMode = "scanner" | "manual";
@@ -34,6 +34,9 @@ export default function Home() {
   const searchParams = useSearchParams();
   const eventIdParam = searchParams.get("eventId");
   const [result, setResult] = useState<CheckInResult | null>(null);
+  const notificationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -47,6 +50,27 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [eventsLoading, setEventsLoading] = useState(true);
+
+  useEffect(() => {
+    return () => {
+      if (notificationTimerRef.current !== null) {
+        clearTimeout(notificationTimerRef.current);
+      }
+    };
+  }, []);
+
+  function showNotification(data: CheckInResult) {
+    if (notificationTimerRef.current !== null) {
+      clearTimeout(notificationTimerRef.current);
+    }
+
+    setResult(data);
+
+    notificationTimerRef.current = setTimeout(() => {
+      setResult(null);
+      notificationTimerRef.current = null;
+    }, 3000);
+  }
 
   useEffect(() => {
     async function loadEvents() {
@@ -169,7 +193,7 @@ export default function Home() {
       }
 
       const data: CheckInResult = await response.json();
-      setResult(data);
+      showNotification(data);
 
       await loadAttendees();
     } catch {
@@ -194,71 +218,81 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-white md:px-8">
-      <div className="mx-auto w-full max-w-[1600px] rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl md:p-8">
-        <div className="mb-8">
-          <p className="mb-2 text-sm font-semibold tracking-widest text-blue-400">
-            EVENTFLOW
-          </p>
+    <main className="min-h-screen bg-slate-950 px-4 py-4 text-white md:px-6">
+      <div className="mx-auto w-full max-w-[1600px] rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl">
+        {/* COMPACT HEADER */}
+        <div className="mb-4 rounded-xl border border-slate-700 bg-slate-950/40 px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {/* TITLE */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-bold tracking-widest text-blue-400">
+                EVENTFLOW
+              </span>
 
-          <h1 className="text-3xl font-bold">Reception Dashboard</h1>
+              <span className="text-slate-600">|</span>
 
-          <div className="mt-5">
-            <label
-              htmlFor="event-select"
-              className="mb-2 block text-sm font-medium text-slate-400"
-            >
-              Select Event
-            </label>
+              <h1 className="text-xl font-bold">Reception Dashboard</h1>
+            </div>
 
-            <select
-              id="event-select"
-              value={selectedEventId ?? ""}
-              onChange={(e) => {
-                setSelectedEventId(Number(e.target.value));
-                setResult(null);
-                setError("");
-                setScannerOpen(false);
-                setReceptionMode("scanner");
-                setAttendeeSearch("");
-              }}
-              disabled={eventsLoading || events.length === 0}
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
-            >
-              {eventsLoading ? (
-                <option value="">Loading events...</option>
-              ) : events.length === 0 ? (
-                <option value="">No events available</option>
-              ) : (
-                events.map((event) => (
-                  <option key={event.id} value={event.id}>
-                    {event.name}
-                  </option>
-                ))
-              )}
-            </select>
+            {/* EVENT SELECT */}
+            <div className="flex w-full items-center gap-3 sm:w-auto">
+              <label
+                htmlFor="event-select"
+                className="shrink-0 text-sm font-medium text-slate-400"
+              >
+                Event:
+              </label>
+
+              <select
+                id="event-select"
+                value={selectedEventId ?? ""}
+                onChange={(e) => {
+                  setSelectedEventId(Number(e.target.value));
+                  setResult(null);
+                  setError("");
+                  setScannerOpen(false);
+                  setReceptionMode("scanner");
+                  setAttendeeSearch("");
+                }}
+                disabled={eventsLoading || events.length === 0}
+                className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 sm:w-[300px] sm:flex-none"
+              >
+                {eventsLoading ? (
+                  <option value="">Loading events...</option>
+                ) : events.length === 0 ? (
+                  <option value="">No events available</option>
+                ) : (
+                  events.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-slate-700 bg-slate-950 p-4 text-center">
-              <p className="text-xs text-slate-400">Total</p>
-              <p className="mt-2 text-2xl font-bold">
+          {/* COMPACT STATISTICS */}
+          <div className="mt-3 flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-slate-800 pt-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-400">Total:</span>
+              <span className="text-lg font-bold">
                 {statsLoading ? "..." : totalAttendees}
-              </p>
+              </span>
             </div>
 
-            <div className="rounded-xl border border-green-800 bg-green-950/40 p-4 text-center">
-              <p className="text-xs text-green-400">Checked In</p>
-              <p className="mt-2 text-2xl font-bold text-green-400">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-green-400">Checked In:</span>
+              <span className="text-lg font-bold text-green-400">
                 {statsLoading ? "..." : checkedIn}
-              </p>
+              </span>
             </div>
 
-            <div className="rounded-xl border border-blue-800 bg-blue-950/40 p-4 text-center">
-              <p className="text-xs text-blue-400">Expected</p>
-              <p className="mt-2 text-2xl font-bold text-blue-400">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-blue-400">Expected:</span>
+              <span className="text-lg font-bold text-blue-400">
                 {statsLoading ? "..." : expected}
-              </p>
+              </span>
             </div>
           </div>
         </div>
@@ -305,22 +339,41 @@ export default function Home() {
 
             {receptionMode === "scanner" ? (
               <div>
-                <button
-                  type="button"
-                  onClick={() => setScannerOpen(!scannerOpen)}
-                  className="mt-3 w-full rounded-xl bg-blue-600 px-6 py-4 text-lg font-bold text-white transition hover:bg-blue-500"
-                >
-                  {scannerOpen ? "Close Scanner" : "Scan QR Code"}
-                </button>
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setScannerOpen(!scannerOpen)}
+                    className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition ${
+                      scannerOpen
+                        ? "border border-slate-600 bg-slate-800 text-white hover:bg-slate-700"
+                        : "bg-blue-600 text-white hover:bg-blue-500"
+                    }`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <rect x="3" y="3" width="7" height="7" rx="1" />
+                      <rect x="14" y="3" width="7" height="7" rx="1" />
+                      <rect x="3" y="14" width="7" height="7" rx="1" />
+                      <path d="M14 14h3v3h-3zM21 14v3M17 21h4M14 21v-2" />
+                    </svg>
+
+                    {scannerOpen ? "Stop Camera" : "Start Camera"}
+                  </button>
+                </div>
 
                 {scannerOpen && (
                   <div className="mx-auto mt-4 w-full max-w-[400px]">
-                    <QRScanner
-                      onScan={(scannedToken) => {
-                        setScannerOpen(false);
-                        void handleCheckIn(scannedToken);
-                      }}
-                    />
+                    <QRScanner onScan={handleCheckIn} />
                   </div>
                 )}
               </div>
@@ -403,39 +456,39 @@ export default function Home() {
             )}
             {result && (
               <div
-                className={`mt-6 rounded-xl border p-5 ${
+                role="status"
+                aria-live="polite"
+                className={`fixed right-6 top-6 z-50 w-[min(420px,calc(100vw-3rem))] rounded-xl border p-5 shadow-2xl ${
                   result.status === "ACCESS_GRANTED"
-                    ? "border-green-700 bg-green-950 text-green-300"
+                    ? "border-green-500 bg-green-950 text-green-100"
                     : result.status === "ALREADY_CHECKED_IN"
-                      ? "border-yellow-700 bg-yellow-950 text-yellow-300"
-                      : "border-red-700 bg-red-950 text-red-300"
+                      ? "border-yellow-500 bg-yellow-950 text-yellow-100"
+                      : "border-red-500 bg-red-950 text-red-100"
                 }`}
               >
-                <h2 className="text-xl font-bold">
-                  {result.status.replaceAll("_", " ")}
-                </h2>
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl" aria-hidden="true">
+                    {result.status === "ACCESS_GRANTED"
+                      ? "✓"
+                      : result.status === "ALREADY_CHECKED_IN"
+                        ? "!"
+                        : "✕"}
+                  </span>
 
-                <p className="mt-2">{result.message}</p>
+                  <div>
+                    <h2 className="text-lg font-bold">
+                      {result.status.replaceAll("_", " ")}
+                    </h2>
 
-                {result.attendeeName && (
-                  <p className="mt-2 font-medium">
-                    Attendee: {result.attendeeName}
-                  </p>
-                )}
+                    <p className="mt-1 text-sm">{result.message}</p>
 
-                {receptionMode === "scanner" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setResult(null);
-                      setError("");
-                      setScannerOpen(true);
-                    }}
-                    className="mt-5 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500"
-                  >
-                    Scan Next Ticket
-                  </button>
-                )}
+                    {result.attendeeName && (
+                      <p className="mt-2 text-sm font-semibold">
+                        {result.attendeeName}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
