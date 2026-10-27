@@ -15,7 +15,10 @@ import {
   Patch,
   Post,
   StreamableFile,
+  UseGuards,
 } from '@nestjs/common';
+
+import { AdminApiGuard } from '../auth/admin-api.guard.js';
 
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import * as QRCode from 'qrcode';
@@ -62,6 +65,7 @@ export class AttendeesController {
 
   // POST /api/events/:eventId/attendees
   @Post()
+  @UseGuards(AdminApiGuard)
   async create(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Body()
@@ -84,6 +88,7 @@ export class AttendeesController {
 
   // PATCH /api/events/:eventId/attendees/:attendeeId
   @Patch(':attendeeId')
+  @UseGuards(AdminApiGuard)
   async update(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Param('attendeeId', ParseIntPipe) attendeeId: number,
@@ -204,6 +209,7 @@ export class AttendeesController {
 
   // DELETE /api/events/:eventId/attendees/:attendeeId
   @Delete(':attendeeId')
+  @UseGuards(AdminApiGuard)
   async remove(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Param('attendeeId', ParseIntPipe) attendeeId: number,

@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { AdminApiGuard } from '../auth/admin-api.guard.js';
+
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { db } from '../prisma/db.js';
 
 @Controller('events')
@@ -9,6 +11,7 @@ export class EventsController {
   }
 
   @Post()
+  @UseGuards(AdminApiGuard)
   async create(
     @Body()
     body: {

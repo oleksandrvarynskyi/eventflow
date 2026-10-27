@@ -38,7 +38,7 @@ export default function EditAttendeeModal({
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/events/${eventId}/attendees/${attendee.id}`,
+        `/api/admin/events/${eventId}/attendees/${attendee.id}`,
         {
           method: "PATCH",
           headers: {

@@ -28,20 +28,17 @@ export default function AddAttendeeForm({
     setSuccess("");
 
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/events/${eventId}/attendees`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            email: email.trim(),
-          }),
+      const response = await fetch(`/api/admin/events/${eventId}/attendees`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to register attendee");

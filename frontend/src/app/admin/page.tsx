@@ -45,7 +45,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const response = await fetch("http://localhost:4000/api/events", {
+        const response = await fetch("/api/admin/events", {
           cache: "no-store",
         });
 
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/events/${selectedEventId}/attendees`,
+        `/api/admin/events/${selectedEventId}/attendees`,
         { cache: "no-store" },
       );
 
@@ -112,7 +112,7 @@ export default function AdminDashboard() {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/events/${selectedEventId}/attendees/${deletingAttendee.id}`,
+        `/api/admin/events/${selectedEventId}/attendees/${deletingAttendee.id}`,
         {
           method: "DELETE",
         },
