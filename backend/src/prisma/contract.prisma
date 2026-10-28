@@ -2,8 +2,8 @@
 
 enum UserRole {
   ADMIN
-  EVENT_MANAGER
-  RECEPTIONIST
+  ORGANIZER
+  RECEPTION
 }
 
 model Organization {
@@ -17,9 +17,13 @@ model Organization {
 
 model User {
   id             Int          @id @default(autoincrement())
-  email          String       @unique
+  username       String       @unique
+  passwordHash   String
+  email          String?      @unique
   name           String?
-  role           UserRole     @default(EVENT_MANAGER)
+  role           UserRole     @default(ORGANIZER)
+  events UserEvent[]
+  isActive       Boolean      @default(true)
 
   organization   Organization @relation(fields: [organizationId], references: [id])
   organizationId Int
@@ -35,6 +39,7 @@ model Event {
   location       String?
   startsAt       TimestamptzString
   endsAt         TimestamptzString?
+  users UserEvent[]
   attendees      Attendee[]
 
   organization   Organization @relation(fields: [organizationId], references: [id])
@@ -58,4 +63,16 @@ model Attendee {
 
   createdAt         TimestamptzString @default(now())
   updatedAt         temporal.updatedAtString()
+}
+
+model UserEvent {
+  id        Int @id @default(autoincrement())
+
+  user      User @relation(fields: [userId], references: [id])
+  userId    Int
+
+  event     Event @relation(fields: [eventId], references: [id])
+  eventId   Int
+
+  @@unique([userId, eventId])
 }

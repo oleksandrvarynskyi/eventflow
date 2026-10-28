@@ -19,6 +19,10 @@
     "user": {
       "model": "User",
       "namespace": "public"
+    },
+    "userEvent": {
+      "model": "UserEvent",
+      "namespace": "public"
     }
   },
   "domain": {
@@ -33,12 +37,12 @@
                 "value": "ADMIN"
               },
               {
-                "name": "EVENT_MANAGER",
-                "value": "EVENT_MANAGER"
+                "name": "ORGANIZER",
+                "value": "ORGANIZER"
               },
               {
-                "name": "RECEPTIONIST",
-                "value": "RECEPTIONIST"
+                "name": "RECEPTION",
+                "value": "RECEPTION"
               }
             ]
           }
@@ -259,6 +263,21 @@
                   "model": "Organization",
                   "namespace": "public"
                 }
+              },
+              "users": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "eventId"
+                  ]
+                },
+                "to": {
+                  "model": "UserEvent",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -387,7 +406,7 @@
                 }
               },
               "email": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -397,6 +416,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "isActive": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
@@ -411,6 +437,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "passwordHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -433,9 +466,31 @@
                   "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
+              },
+              "username": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
+              "events": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "userId"
+                  ]
+                },
+                "to": {
+                  "model": "UserEvent",
+                  "namespace": "public"
+                }
+              },
               "organization": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -464,21 +519,104 @@
                 "id": {
                   "column": "id"
                 },
+                "isActive": {
+                  "column": "isActive"
+                },
                 "name": {
                   "column": "name"
                 },
                 "organizationId": {
                   "column": "organizationId"
                 },
+                "passwordHash": {
+                  "column": "passwordHash"
+                },
                 "role": {
                   "column": "role"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
+                },
+                "username": {
+                  "column": "username"
                 }
               },
               "namespaceId": "public",
               "table": "user"
+            }
+          },
+          "UserEvent": {
+            "fields": {
+              "eventId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "userId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "event": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "eventId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Event",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "nullable": false,
+                "on": {
+                  "localFields": [
+                    "userId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "eventId": {
+                  "column": "eventId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "userId": {
+                  "column": "userId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "userEvent"
             }
           }
         }
@@ -721,8 +859,8 @@
             "user": {
               "checks": [
                 {
-                  "expression": "\"role\" IN ('ADMIN', 'EVENT_MANAGER', 'RECEPTIONIST')",
-                  "name": "user_role_check_4f4846ff",
+                  "expression": "\"role\" IN ('ADMIN', 'ORGANIZER', 'RECEPTION')",
+                  "name": "user_role_check_e0406534",
                   "prefix": "user_role_check"
                 }
               ],
@@ -739,7 +877,7 @@
                 "email": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": true
                 },
                 "id": {
                   "codecId": "pg/int4@1",
@@ -748,6 +886,15 @@
                     "kind": "function"
                   },
                   "nativeType": "int4",
+                  "nullable": false
+                },
+                "isActive": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
                   "nullable": false
                 },
                 "name": {
@@ -760,11 +907,16 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "passwordHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
                 "role": {
                   "codecId": "pg/text@1",
                   "default": {
                     "kind": "literal",
-                    "value": "EVENT_MANAGER"
+                    "value": "ORGANIZER"
                   },
                   "nativeType": "text",
                   "nullable": false,
@@ -778,6 +930,11 @@
                 "updatedAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "username": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
                   "nullable": false
                 }
               },
@@ -817,7 +974,100 @@
               "uniques": [
                 {
                   "columns": [
+                    "username"
+                  ]
+                },
+                {
+                  "columns": [
                     "email"
+                  ]
+                }
+              ]
+            },
+            "userEvent": {
+              "columns": {
+                "eventId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "userId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "source": {
+                    "columns": [
+                      "userId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "userEvent"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "user"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "eventId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "userEvent"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "event"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "eventId"
+                  ],
+                  "name": "userEvent_eventId_idx_6a266d47",
+                  "prefix": "userEvent_eventId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "userId"
+                  ],
+                  "name": "userEvent_userId_idx_a489d58a",
+                  "prefix": "userEvent_userId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "userId",
+                    "eventId"
                   ]
                 }
               ]
@@ -828,8 +1078,8 @@
               "kind": "valueSet",
               "values": [
                 "ADMIN",
-                "EVENT_MANAGER",
-                "RECEPTIONIST"
+                "ORGANIZER",
+                "RECEPTION"
               ]
             }
           }
@@ -838,7 +1088,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "4c325b128155e4ef96aff717b07f1827b389b758beb86711254b1573be3cdb20"
+    "storageHash": "622fe83f480f6fa6f508cd0b58e8c2e2bcff64a64c50d1392017f24ba67baade"
   },
   "execution": {
     "executionHash": "75039d551cfe3f276db5955e67d9003e2123d5d3c7dc9228426853d04a45b375",

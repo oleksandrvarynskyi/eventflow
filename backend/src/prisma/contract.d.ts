@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'4c325b128155e4ef96aff717b07f1827b389b758beb86711254b1573be3cdb20'>;
+  StorageHashBase<'622fe83f480f6fa6f508cd0b58e8c2e2bcff64a64c50d1392017f24ba67baade'>;
 export type ExecutionHash =
   ExecutionHashBase<'75039d551cfe3f276db5955e67d9003e2123d5d3c7dc9228426853d04a45b375'>;
 export type ProfileHash =
@@ -272,12 +272,20 @@ export type FieldOutputTypes = {
     };
     readonly User: {
       readonly id: CodecTypes['pg/int4@1']['output'];
-      readonly email: CodecTypes['pg/text@1']['output'];
+      readonly username: CodecTypes['pg/text@1']['output'];
+      readonly passwordHash: CodecTypes['pg/text@1']['output'];
+      readonly email: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'] | null;
-      readonly role: 'ADMIN' | 'EVENT_MANAGER' | 'RECEPTIONIST';
+      readonly role: 'ADMIN' | 'ORGANIZER' | 'RECEPTION';
+      readonly isActive: CodecTypes['pg/bool@1']['output'];
       readonly organizationId: CodecTypes['pg/int4@1']['output'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
+    readonly UserEvent: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly userId: CodecTypes['pg/int4@1']['output'];
+      readonly eventId: CodecTypes['pg/int4@1']['output'];
     };
   };
 };
@@ -313,12 +321,20 @@ export type FieldInputTypes = {
     };
     readonly User: {
       readonly id: CodecTypes['pg/int4@1']['input'];
-      readonly email: CodecTypes['pg/text@1']['input'];
+      readonly username: CodecTypes['pg/text@1']['input'];
+      readonly passwordHash: CodecTypes['pg/text@1']['input'];
+      readonly email: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'] | null;
-      readonly role: 'ADMIN' | 'EVENT_MANAGER' | 'RECEPTIONIST';
+      readonly role: 'ADMIN' | 'ORGANIZER' | 'RECEPTION';
+      readonly isActive: CodecTypes['pg/bool@1']['input'];
       readonly organizationId: CodecTypes['pg/int4@1']['input'];
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly UserEvent: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly userId: CodecTypes['pg/int4@1']['input'];
+      readonly eventId: CodecTypes['pg/int4@1']['input'];
     };
   };
 };
@@ -354,12 +370,20 @@ export type StorageColumnTypes = {
     };
     readonly user: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
-      readonly email: CodecTypes['pg/text@1']['output'];
+      readonly email: CodecTypes['pg/text@1']['output'] | null;
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly isActive: CodecTypes['pg/bool@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'] | null;
       readonly organizationId: CodecTypes['pg/int4@1']['output'];
-      readonly role: 'ADMIN' | 'EVENT_MANAGER' | 'RECEPTIONIST';
+      readonly passwordHash: CodecTypes['pg/text@1']['output'];
+      readonly role: 'ADMIN' | 'ORGANIZER' | 'RECEPTION';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly username: CodecTypes['pg/text@1']['output'];
+    };
+    readonly userEvent: {
+      readonly eventId: CodecTypes['pg/int4@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly userId: CodecTypes['pg/int4@1']['output'];
     };
   };
 };
@@ -395,12 +419,20 @@ export type StorageColumnInputTypes = {
     };
     readonly user: {
       readonly createdAt: CodecTypes['pg/timestamptz-string@1']['input'];
-      readonly email: CodecTypes['pg/text@1']['input'];
+      readonly email: CodecTypes['pg/text@1']['input'] | null;
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly isActive: CodecTypes['pg/bool@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'] | null;
       readonly organizationId: CodecTypes['pg/int4@1']['input'];
-      readonly role: 'ADMIN' | 'EVENT_MANAGER' | 'RECEPTIONIST';
+      readonly passwordHash: CodecTypes['pg/text@1']['input'];
+      readonly role: 'ADMIN' | 'ORGANIZER' | 'RECEPTION';
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly username: CodecTypes['pg/text@1']['input'];
+    };
+    readonly userEvent: {
+      readonly eventId: CodecTypes['pg/int4@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly userId: CodecTypes['pg/int4@1']['input'];
     };
   };
 };
@@ -417,14 +449,18 @@ export namespace Models {
   };
   export type public_User = {
     id: CodecTypes['pg/int4@1']['output'];
-    email: CodecTypes['pg/text@1']['output'];
+    username: CodecTypes['pg/text@1']['output'];
+    passwordHash: CodecTypes['pg/text@1']['output'];
+    email: CodecTypes['pg/text@1']['output'] | null;
     name: CodecTypes['pg/text@1']['output'] | null;
-    role: 'ADMIN' | 'EVENT_MANAGER' | 'RECEPTIONIST';
+    role: 'ADMIN' | 'ORGANIZER' | 'RECEPTION';
+    isActive: CodecTypes['pg/bool@1']['output'];
     organizationId: CodecTypes['pg/int4@1']['output'];
     createdAt: CodecTypes['pg/timestamptz-string@1']['output'];
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
+    events: public_UserEvent[];
     organization: public_Organization;
-    readonly [RelationKeys]?: 'organization';
+    readonly [RelationKeys]?: 'events' | 'organization';
   };
   export type public_Event = {
     id: CodecTypes['pg/int4@1']['output'];
@@ -438,7 +474,8 @@ export namespace Models {
     updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     attendees: public_Attendee[];
     organization: public_Organization;
-    readonly [RelationKeys]?: 'attendees' | 'organization';
+    users: public_UserEvent[];
+    readonly [RelationKeys]?: 'attendees' | 'organization' | 'users';
   };
   export type public_Attendee = {
     id: CodecTypes['pg/int4@1']['output'];
@@ -453,6 +490,14 @@ export namespace Models {
     event: public_Event;
     readonly [RelationKeys]?: 'event';
   };
+  export type public_UserEvent = {
+    id: CodecTypes['pg/int4@1']['output'];
+    userId: CodecTypes['pg/int4@1']['output'];
+    eventId: CodecTypes['pg/int4@1']['output'];
+    event: public_Event;
+    user: public_User;
+    readonly [RelationKeys]?: 'event' | 'user';
+  };
 }
 
 export declare const models: {
@@ -461,6 +506,7 @@ export declare const models: {
     User: Models.public_User;
     Event: Models.public_Event;
     Attendee: Models.public_Attendee;
+    UserEvent: Models.public_UserEvent;
   };
 };
 
@@ -682,10 +728,20 @@ type ContractBase = Omit<
                     readonly expression: 'autoincrement()';
                   };
                 };
-                readonly email: {
+                readonly username: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                };
+                readonly passwordHash: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly email: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
                 };
                 readonly name: {
                   readonly nativeType: 'text';
@@ -698,7 +754,16 @@ type ContractBase = Omit<
                   readonly nullable: false;
                   readonly default: {
                     readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/text@1', 'EVENT_MANAGER'>;
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'ORGANIZER'>;
+                  };
+                };
+                readonly isActive: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
                   };
                 };
                 readonly organizationId: {
@@ -719,7 +784,10 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['email'] }];
+              uniques: readonly [
+                { readonly columns: readonly ['username'] },
+                { readonly columns: readonly ['email'] },
+              ];
               indexes: readonly [
                 {
                   readonly name: 'user_organizationId_idx_2e17ef41';
@@ -743,11 +811,76 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly userEvent: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly userId: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
+                readonly eventId: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['userId', 'eventId'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'userEvent_userId_idx_a489d58a';
+                  readonly prefix: 'userEvent_userId_idx';
+                  readonly columns: readonly ['userId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'userEvent_eventId_idx_6a266d47';
+                  readonly prefix: 'userEvent_eventId_idx';
+                  readonly columns: readonly ['eventId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'userEvent';
+                    readonly columns: readonly ['userId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'user';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'userEvent';
+                    readonly columns: readonly ['eventId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'event';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
           };
           readonly valueSet: {
             readonly UserRole: {
               readonly kind: 'valueSet';
-              readonly values: readonly ['ADMIN', 'EVENT_MANAGER', 'RECEPTIONIST'];
+              readonly values: readonly ['ADMIN', 'ORGANIZER', 'RECEPTION'];
             };
           };
         };
@@ -767,6 +900,7 @@ type ContractBase = Omit<
     readonly user: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
     readonly event: { readonly namespace: 'public' & NamespaceId; readonly model: 'Event' };
     readonly attendee: { readonly namespace: 'public' & NamespaceId; readonly model: 'Attendee' };
+    readonly userEvent: { readonly namespace: 'public' & NamespaceId; readonly model: 'UserEvent' };
   };
   readonly domain: {
     readonly namespaces: {
@@ -925,6 +1059,17 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['id'];
                 };
               };
+              readonly users: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'UserEvent';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['eventId'];
+                };
+              };
             };
             readonly storage: {
               readonly table: 'event';
@@ -1005,8 +1150,16 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly email: {
+              readonly username: {
                 readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly passwordHash: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly email: {
+                readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
               readonly name: {
@@ -1016,6 +1169,10 @@ type ContractBase = Omit<
               readonly role: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly isActive: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
               readonly organizationId: {
                 readonly nullable: false;
@@ -1037,6 +1194,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly events: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'UserEvent';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['userId'];
+                };
+              };
               readonly organization: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -1055,12 +1223,63 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly id: { readonly column: 'id' };
+                readonly username: { readonly column: 'username' };
+                readonly passwordHash: { readonly column: 'passwordHash' };
                 readonly email: { readonly column: 'email' };
                 readonly name: { readonly column: 'name' };
                 readonly role: { readonly column: 'role' };
+                readonly isActive: { readonly column: 'isActive' };
                 readonly organizationId: { readonly column: 'organizationId' };
                 readonly createdAt: { readonly column: 'createdAt' };
                 readonly updatedAt: { readonly column: 'updatedAt' };
+              };
+            };
+          };
+          readonly UserEvent: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly userId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly eventId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: {
+              readonly event: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Event';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['eventId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['userId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'userEvent';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly userId: { readonly column: 'userId' };
+                readonly eventId: { readonly column: 'eventId' };
               };
             };
           };
@@ -1070,8 +1289,8 @@ type ContractBase = Omit<
             readonly codecId: 'pg/text@1';
             readonly members: readonly [
               { readonly name: 'ADMIN'; readonly value: 'ADMIN' },
-              { readonly name: 'EVENT_MANAGER'; readonly value: 'EVENT_MANAGER' },
-              { readonly name: 'RECEPTIONIST'; readonly value: 'RECEPTIONIST' },
+              { readonly name: 'ORGANIZER'; readonly value: 'ORGANIZER' },
+              { readonly name: 'RECEPTION'; readonly value: 'RECEPTION' },
             ];
           };
         };
