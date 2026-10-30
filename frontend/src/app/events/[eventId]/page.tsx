@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import QRCode from "qrcode";
 
 type Event = {
   id: number;
@@ -23,34 +24,39 @@ export default function PublicEventPage() {
   const [submitting, setSubmitting] = useState(false);
   const [registrationError, setRegistrationError] = useState("");
   const [registered, setRegistered] = useState(false);
-  const [registeredAttendeeId, setRegisteredAttendeeId] = useState<
-    number | null
-  >(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadEvent() {
+      setLoading(true);
+      setError("");
+
       try {
-        const response = await fetch("http://localhost:4000/api/events", {
-          cache: "no-store",
-        });
+        const response = await fetch(
+          `http://localhost:4000/api/events/${eventId}/public`,
+          {
+            cache: "no-store",
+          },
+        );
+
+        if (response.status === 404) {
+          setError("Event not found.");
+          return;
+        }
 
         if (!response.ok) {
           throw new Error("Failed to load event");
         }
 
-        const events: Event[] = await response.json();
+        const selectedEvent: Event = await response.json();
 
-        const selectedEvent = events.find(
-          (item) => item.id === Number(eventId),
-        );
-
-        if (!selectedEvent) {
-          setError("Event not found.");
-          return;
+        if (selectedEvent.id !== Number(eventId)) {
+          throw new Error("Unexpected event response");
         }
 
         setEvent(selectedEvent);
-      } catch {
+      } catch (error) {
+        console.error("Failed to load event:", error);
         setError("Unable to load event information.");
       } finally {
         setLoading(false);
@@ -93,10 +99,28 @@ export default function PublicEventPage() {
         message: string;
         attendee: {
           id: number;
+          registrationToken: string;
         };
       } = await response.json();
 
-      setRegisteredAttendeeId(data.attendee.id);
+      if (
+        !data.success ||
+        typeof data.attendee?.registrationToken !== "string" ||
+        !data.attendee.registrationToken
+      ) {
+        throw new Error("Registration token missing");
+      }
+
+      const generatedQr = await QRCode.toDataURL(
+        data.attendee.registrationToken,
+        {
+          width: 300,
+          margin: 2,
+          errorCorrectionLevel: "M",
+        },
+      );
+
+      setQrDataUrl(generatedQr);
       setRegistered(true);
     } catch (error) {
       console.error("Registration error:", error);
@@ -150,11 +174,13 @@ export default function PublicEventPage() {
                   Thank you, {firstName}! You are registered for {event.name}.
                 </p>
 
-                {registeredAttendeeId !== null && event && (
+                {qrDataUrl && (
                   <div className="mt-6 flex flex-col items-center">
                     <div className="rounded-xl bg-white p-4">
+                      {/* QR generated locally from the registration token */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={`http://localhost:4000/api/events/${event.id}/attendees/${registeredAttendeeId}/qr`}
+                        src={qrDataUrl}
                         alt="Your event QR ticket"
                         width={240}
                         height={240}

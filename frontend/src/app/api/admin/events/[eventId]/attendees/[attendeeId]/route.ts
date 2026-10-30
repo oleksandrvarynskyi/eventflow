@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/auth";
+import { getUserSession, getBackendAuthorization } from "@/lib/auth";
 
 type RouteContext = {
   params: Promise<{
@@ -9,16 +9,16 @@ type RouteContext = {
 };
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const isAuthenticated = await verifyAdminSession();
+  const user = await getUserSession();
+  const isAuthenticated = user?.role === "ADMIN" || user?.role === "ORGANIZER";
 
   if (!isAuthenticated) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const backendUrl = process.env.BACKEND_API_URL;
-  const adminApiKey = process.env.ADMIN_API_KEY;
 
-  if (!backendUrl || !adminApiKey) {
+  if (!backendUrl) {
     return NextResponse.json(
       { message: "Server configuration error" },
       { status: 500 },
@@ -41,7 +41,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   } catch {
     return NextResponse.json({ message: "Invalid JSON body" }, { status: 400 });
   }
+  const authorization = await getBackendAuthorization();
 
+  if (!authorization) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const response = await fetch(
       `${backendUrl}/events/${eventId}/attendees/${attendeeId}`,
@@ -49,7 +53,7 @@ export async function PATCH(request: Request, context: RouteContext) {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "x-admin-key": adminApiKey,
+          Authorization: authorization,
         },
         body: JSON.stringify(body),
         cache: "no-store",
@@ -72,16 +76,16 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
-  const isAuthenticated = await verifyAdminSession();
+  const user = await getUserSession();
+  const isAuthenticated = user?.role === "ADMIN" || user?.role === "ORGANIZER";
 
   if (!isAuthenticated) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const backendUrl = process.env.BACKEND_API_URL;
-  const adminApiKey = process.env.ADMIN_API_KEY;
 
-  if (!backendUrl || !adminApiKey) {
+  if (!backendUrl) {
     return NextResponse.json(
       { message: "Server configuration error" },
       { status: 500 },
@@ -97,13 +101,19 @@ export async function DELETE(request: Request, context: RouteContext) {
     );
   }
 
+  const authorization = await getBackendAuthorization();
+
+  if (!authorization) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const response = await fetch(
       `${backendUrl}/events/${eventId}/attendees/${attendeeId}`,
       {
         method: "DELETE",
         headers: {
-          "x-admin-key": adminApiKey,
+          Authorization: authorization,
         },
         cache: "no-store",
       },

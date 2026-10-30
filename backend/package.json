@@ -33,6 +33,7 @@
     "@prisma/orm-postgres": "^8.0.0-rc.11",
     "bcryptjs": "^3.0.3",
     "dotenv": "^18.0.1",
+    "jose": "^6.2.13",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.34.1",

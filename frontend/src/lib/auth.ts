@@ -3,21 +3,33 @@ import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-const COOKIE_NAME = "eventflow_admin_session";
+const COOKIE_NAME = "eventflow_session";
+
+export type UserRole = "ADMIN" | "ORGANIZER" | "RECEPTION";
+
+export type SessionUser = {
+  id: number;
+  username: string;
+  role: UserRole;
+};
 
 function getSessionSecret(): Uint8Array {
-  const secret = process.env.ADMIN_SESSION_SECRET;
+  const secret = process.env.USER_SESSION_SECRET;
 
   if (!secret || secret.length < 32) {
-    throw new Error("ADMIN_SESSION_SECRET must be at least 32 characters");
+    throw new Error("USER_SESSION_SECRET must be at least 32 characters");
   }
 
   return new TextEncoder().encode(secret);
 }
 
-export async function createAdminSession(): Promise<void> {
-  const token = await new SignJWT({ role: "admin" })
+export async function createUserSession(user: SessionUser): Promise<void> {
+  const token = await new SignJWT({
+    username: user.username,
+    role: user.role,
+  })
     .setProtectedHeader({ alg: "HS256" })
+    .setSubject(String(user.id))
     .setIssuedAt()
     .setExpirationTime("8h")
     .sign(getSessionSecret());
@@ -33,76 +45,58 @@ export async function createAdminSession(): Promise<void> {
   });
 }
 
-export async function verifyAdminSession(): Promise<boolean> {
+export async function getUserSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
 
-  if (!token) return false;
+  if (!token) return null;
 
   try {
     const { payload } = await jwtVerify(token, getSessionSecret(), {
       algorithms: ["HS256"],
     });
 
-    return payload.role === "admin";
+    const id = Number(payload.sub);
+    const username = payload.username;
+    const role = payload.role;
+
+    if (
+      !Number.isSafeInteger(id) ||
+      id <= 0 ||
+      typeof username !== "string" ||
+      !["ADMIN", "ORGANIZER", "RECEPTION"].includes(role as string)
+    ) {
+      return null;
+    }
+
+    return {
+      id,
+      username,
+      role: role as UserRole,
+    };
   } catch {
-    return false;
+    return null;
   }
 }
 
-export async function deleteAdminSession(): Promise<void> {
+export async function deleteUserSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
 }
 
-const RECEPTION_COOKIE_NAME = "eventflow_reception_session";
+export async function getBackendAuthorization(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
 
-function getReceptionSessionSecret(): Uint8Array {
-  const secret = process.env.RECEPTION_SESSION_SECRET;
-
-  if (!secret || secret.length < 32) {
-    throw new Error("RECEPTION_SESSION_SECRET must be at least 32 characters");
+  if (!token) {
+    return null;
   }
 
-  return new TextEncoder().encode(secret);
-}
+  const user = await getUserSession();
 
-export async function createReceptionSession(): Promise<void> {
-  const token = await new SignJWT({ role: "reception" })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime("8h")
-    .sign(getReceptionSessionSecret());
-
-  const cookieStore = await cookies();
-
-  cookieStore.set(RECEPTION_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 8,
-  });
-}
-
-export async function verifyReceptionSession(): Promise<boolean> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(RECEPTION_COOKIE_NAME)?.value;
-
-  if (!token) return false;
-
-  try {
-    const { payload } = await jwtVerify(token, getReceptionSessionSecret(), {
-      algorithms: ["HS256"],
-    });
-
-    return payload.role === "reception";
-  } catch {
-    return false;
+  if (!user) {
+    return null;
   }
-}
 
-export async function deleteReceptionSession(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(RECEPTION_COOKIE_NAME);
+  return `Bearer ${token}`;
 }

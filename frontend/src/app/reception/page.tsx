@@ -75,7 +75,7 @@ export default function Home() {
   useEffect(() => {
     async function loadEvents() {
       try {
-        const response = await fetch("http://localhost:4000/api/events", {
+        const response = await fetch("/api/reception/events", {
           cache: "no-store",
         });
 
@@ -112,7 +112,7 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/events/${selectedEventId}/attendees`,
+        `/api/reception/events/${selectedEventId}/attendees`,
         { cache: "no-store" },
       );
 
@@ -180,7 +180,7 @@ export default function Home() {
 
     try {
       const response = await fetch(
-        `http://localhost:4000/api/events/${selectedEventId}/check-in`,
+        `/api/reception/events/${selectedEventId}/check-in`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -1,15 +1,19 @@
 import { redirect } from "next/navigation";
-import { verifyAdminSession } from "@/lib/auth";
+import { getUserSession } from "@/lib/auth";
 
 export default async function AdminLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  const isAuthenticated = await verifyAdminSession();
+}) {
+  const user = await getUserSession();
 
-  if (!isAuthenticated) {
-    redirect("/admin/login");
+  if (!user) {
+    redirect("/");
+  }
+
+  if (user.role !== "ADMIN") {
+    redirect("/");
   }
 
   return <>{children}</>;

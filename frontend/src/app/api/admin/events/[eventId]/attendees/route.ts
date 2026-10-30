@@ -1,21 +1,21 @@
 import { NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/auth";
+import { getUserSession, getBackendAuthorization } from "@/lib/auth";
 
 type RouteContext = {
   params: Promise<{ eventId: string }>;
 };
 
 export async function GET(_request: Request, context: RouteContext) {
-  const isAuthenticated = await verifyAdminSession();
+  const user = await getUserSession();
+  const isAuthenticated = user?.role === "ADMIN" || user?.role === "ORGANIZER";
 
   if (!isAuthenticated) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const backendUrl = process.env.BACKEND_API_URL;
-  const adminApiKey = process.env.ADMIN_API_KEY;
 
-  if (!backendUrl || !adminApiKey) {
+  if (!backendUrl) {
     return NextResponse.json(
       { message: "Server configuration error" },
       { status: 500 },
@@ -28,10 +28,15 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ message: "Invalid event ID" }, { status: 400 });
   }
 
+  const authorization = await getBackendAuthorization();
+
+  if (!authorization) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
   try {
     const response = await fetch(`${backendUrl}/events/${eventId}/attendees`, {
       headers: {
-        "x-admin-key": adminApiKey,
+        Authorization: authorization,
       },
       cache: "no-store",
     });
@@ -52,16 +57,16 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function POST(request: Request, context: RouteContext) {
-  const isAuthenticated = await verifyAdminSession();
+  const user = await getUserSession();
+  const isAuthenticated = user?.role === "ADMIN" || user?.role === "ORGANIZER";
 
   if (!isAuthenticated) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const backendUrl = process.env.BACKEND_API_URL;
-  const adminApiKey = process.env.ADMIN_API_KEY;
 
-  if (!backendUrl || !adminApiKey) {
+  if (!backendUrl) {
     return NextResponse.json(
       { message: "Server configuration error" },
       { status: 500 },
@@ -77,11 +82,17 @@ export async function POST(request: Request, context: RouteContext) {
   try {
     const body = await request.json();
 
+    const authorization = await getBackendAuthorization();
+
+    if (!authorization) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
     const response = await fetch(`${backendUrl}/events/${eventId}/attendees`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-admin-key": adminApiKey,
+        Authorization: authorization,
       },
       body: JSON.stringify(body),
       cache: "no-store",

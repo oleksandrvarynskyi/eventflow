@@ -8,6 +8,8 @@ import { EventsModule } from './events/events.module.js';
 import { AttendeesModule } from './attendees/attendees.module.js';
 import { CheckInModule } from './check-in/check-in.module.js';
 import { EmailModule } from './email/email.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { UsersModule } from './users/users.module.js';
 
 export const { ObserveModule, ObserveInstrument } = createObserveModule();
 
@@ -16,8 +18,6 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    // Distributed tracing, auto-correlated logs, request/job metrics, error
-    // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
     ObserveModule.forRoot({
       appKey: 'YOUR_APP_KEY',
       appSecret: 'YOUR_APP_SECRET',
@@ -28,6 +28,8 @@ export const { ObserveModule, ObserveInstrument } = createObserveModule();
     AttendeesModule,
     CheckInModule,
     EmailModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

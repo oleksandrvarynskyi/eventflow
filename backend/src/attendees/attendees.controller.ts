@@ -5,9 +5,6 @@ import {
   Delete,
   Get,
   Header,
-  Headers,
-  UnauthorizedException,
-  InternalServerErrorException,
   Logger,
   NotFoundException,
   Param,
@@ -18,45 +15,28 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { AdminApiGuard } from '../auth/admin-api.guard.js';
-
-import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import * as QRCode from 'qrcode';
 
 import { db } from '../prisma/db.js';
 
 import { EmailService } from '../email/email.service.js';
 
-import { ConfigService } from '@nestjs/config';
+import {
+  AccessGuard,
+  EventAccessGuard,
+  AttendeeManagementGuard,
+} from '../auth/access.guard.js';
 
 @Controller('events/:eventId/attendees')
 export class AttendeesController {
   private readonly logger = new Logger(AttendeesController.name);
 
-  constructor(
-    private readonly emailService: EmailService,
-    private readonly configService: ConfigService,
-  ) {}
+  constructor(private readonly emailService: EmailService) {}
 
-  private validateAdminKey(providedKey?: string): void {
-    const expectedKey = this.configService.get<string>('ADMIN_API_KEY');
-
-    if (!expectedKey) {
-      throw new InternalServerErrorException('Admin API key is not configured');
-    }
-
-    const provided = Buffer.from(providedKey ?? '');
-    const expected = Buffer.from(expectedKey);
-
-    if (
-      provided.length !== expected.length ||
-      !timingSafeEqual(provided, expected)
-    ) {
-      throw new UnauthorizedException('Invalid admin API key');
-    }
-  }
   // GET /api/events/:eventId/attendees
   @Get()
+  @UseGuards(AccessGuard, EventAccessGuard, AttendeeManagementGuard)
   async findAll(@Param('eventId', ParseIntPipe) eventId: number) {
     const attendees = await db.orm.public.Attendee.all();
 
@@ -65,7 +45,7 @@ export class AttendeesController {
 
   // POST /api/events/:eventId/attendees
   @Post()
-  @UseGuards(AdminApiGuard)
+  @UseGuards(AccessGuard, EventAccessGuard, AttendeeManagementGuard)
   async create(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Body()
@@ -88,7 +68,7 @@ export class AttendeesController {
 
   // PATCH /api/events/:eventId/attendees/:attendeeId
   @Patch(':attendeeId')
-  @UseGuards(AdminApiGuard)
+  @UseGuards(AccessGuard, EventAccessGuard, AttendeeManagementGuard)
   async update(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Param('attendeeId', ParseIntPipe) attendeeId: number,
@@ -131,6 +111,7 @@ export class AttendeesController {
 
   // GET /api/events/:eventId/attendees/:attendeeId/qr
   @Get(':attendeeId/qr')
+  @UseGuards(AccessGuard, EventAccessGuard, AttendeeManagementGuard)
   @Header('Content-Type', 'image/png')
   async getQrCode(
     @Param('eventId', ParseIntPipe) eventId: number,
@@ -161,13 +142,11 @@ export class AttendeesController {
   }
 
   @Post(':attendeeId/resend-ticket')
+  @UseGuards(AccessGuard, EventAccessGuard, AttendeeManagementGuard)
   async resendTicket(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Param('attendeeId', ParseIntPipe) attendeeId: number,
-    @Headers('x-admin-key') adminKey?: string,
   ) {
-    this.validateAdminKey(adminKey);
-
     const attendees = await db.orm.public.Attendee.all();
 
     const attendee = attendees.find(
@@ -209,7 +188,7 @@ export class AttendeesController {
 
   // DELETE /api/events/:eventId/attendees/:attendeeId
   @Delete(':attendeeId')
-  @UseGuards(AdminApiGuard)
+  @UseGuards(AccessGuard, EventAccessGuard, AttendeeManagementGuard)
   async remove(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Param('attendeeId', ParseIntPipe) attendeeId: number,

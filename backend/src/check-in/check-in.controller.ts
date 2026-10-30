@@ -1,9 +1,19 @@
-import { Body, Controller, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  ParseIntPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { db } from '../prisma/db.js';
+
+import { AccessGuard, EventAccessGuard } from '../auth/access.guard.js';
 
 @Controller('events/:eventId/check-in')
 export class CheckInController {
   @Post()
+  @UseGuards(AccessGuard, EventAccessGuard)
   async checkIn(
     @Param('eventId', ParseIntPipe) eventId: number,
     @Body() body: { registrationToken: string },

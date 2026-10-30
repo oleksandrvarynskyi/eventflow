@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/auth";
+import { getUserSession, getBackendAuthorization } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
-  const isAuthenticated = await verifyAdminSession();
+  const user = await getUserSession();
+  const isAuthenticated = user?.role === "ADMIN";
 
   if (!isAuthenticated) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const backendUrl = process.env.BACKEND_API_URL;
-  const adminApiKey = process.env.ADMIN_API_KEY;
 
-  if (!backendUrl || !adminApiKey) {
-    console.error("Backend API configuration is missing");
-
+  if (!backendUrl) {
     return NextResponse.json(
       { message: "Server configuration error" },
       { status: 500 },
@@ -23,11 +21,17 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    const authorization = await getBackendAuthorization();
+
+    if (!authorization) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
     const response = await fetch(`${backendUrl}/events`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-admin-key": adminApiKey,
+        Authorization: authorization,
       },
       body: JSON.stringify(body),
       cache: "no-store",
@@ -49,26 +53,32 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const isAuthenticated = await verifyAdminSession();
+  const user = await getUserSession();
+  const isAuthenticated = user?.role === "ADMIN";
 
   if (!isAuthenticated) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
   const backendUrl = process.env.BACKEND_API_URL;
-  const adminApiKey = process.env.ADMIN_API_KEY;
 
-  if (!backendUrl || !adminApiKey) {
+  if (!backendUrl) {
     return NextResponse.json(
       { message: "Server configuration error" },
       { status: 500 },
     );
   }
 
+  const authorization = await getBackendAuthorization();
+
+  if (!authorization) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const response = await fetch(`${backendUrl}/events`, {
       headers: {
-        "x-admin-key": adminApiKey,
+        Authorization: authorization,
       },
       cache: "no-store",
     });

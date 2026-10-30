@@ -94,7 +94,10 @@ export class PublicRegistrationController {
     return {
       success: true,
       message: 'Registration successful',
-      attendee,
+      attendee: {
+        id: attendee.id,
+        registrationToken: attendee.registrationToken,
+      },
     };
   }
 }
