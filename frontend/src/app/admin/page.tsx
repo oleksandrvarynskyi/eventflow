@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AddAttendeeForm from "@/components/AddAttendeeForm";
 import EditAttendeeModal from "@/components/EditAttendeeModal";
+import LogoutButton from "@/components/LogoutButton";
 
 type Attendee = {
   id: number;
@@ -169,16 +170,31 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white md:px-8">
       <div className="mx-auto w-full max-w-[1600px]">
         {/* HEADER */}
-        <header className="mb-8">
-          <p className="mb-2 text-sm font-semibold tracking-widest text-blue-400">
-            EVENTFLOW
-          </p>
+        {/* HEADER */}
+        <header className="mb-8 flex flex-wrap items-start justify-between gap-6">
+          <div>
+            <p className="mb-2 text-sm font-semibold tracking-widest text-blue-400">
+              EVENTFLOW
+            </p>
 
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
 
-          <p className="mt-2 text-sm text-slate-400">
-            Manage event registrations and attendance.
-          </p>
+            <p className="mt-2 text-sm text-slate-400">
+              Manage event registrations and attendance.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 pt-1">
+            <div className="flex items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-sm font-semibold text-blue-400">
+                A
+              </span>
+
+              <span className="text-sm font-medium text-slate-300">admin</span>
+            </div>
+
+            <LogoutButton />
+          </div>
         </header>
 
         {/* EVENT SELECT */}

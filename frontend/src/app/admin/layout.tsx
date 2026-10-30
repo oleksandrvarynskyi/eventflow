@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
+
 import { getUserSession } from "@/lib/auth";
+import AdminSessionGuard from "@/components/AdminSessionGuard";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
   children,
@@ -8,13 +12,9 @@ export default async function AdminLayout({
 }) {
   const user = await getUserSession();
 
-  if (!user) {
+  if (!user || user.role !== "ADMIN") {
     redirect("/");
   }
 
-  if (user.role !== "ADMIN") {
-    redirect("/");
-  }
-
-  return <>{children}</>;
+  return <AdminSessionGuard userId={user.id}>{children}</AdminSessionGuard>;
 }
