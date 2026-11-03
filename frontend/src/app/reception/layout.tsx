@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
+
 import { getUserSession } from "@/lib/auth";
+import ReceptionSessionGuard from "@/components/ReceptionSessionGuard";
+
+export const dynamic = "force-dynamic";
 
 export default async function ReceptionLayout({
   children,
@@ -12,9 +16,15 @@ export default async function ReceptionLayout({
     redirect("/");
   }
 
-  if (user.role !== "ADMIN" && user.role !== "RECEPTION") {
+  if (
+    user.role !== "ADMIN" &&
+    user.role !== "ORGANIZER" &&
+    user.role !== "RECEPTION"
+  ) {
     redirect("/");
   }
 
-  return <>{children}</>;
+  return (
+    <ReceptionSessionGuard userId={user.id}>{children}</ReceptionSessionGuard>
+  );
 }
