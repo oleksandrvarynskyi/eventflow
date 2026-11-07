@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 
 import {
   AccessGuard,
@@ -17,7 +25,17 @@ export class EventsController {
     const events = await db.orm.public.Event.all();
 
     if (user.role === 'ADMIN') {
-      return events;
+      const users = await db.orm.public.User.all();
+
+      const adminUser = users.find((item) => item.id === user.id);
+
+      if (!adminUser || !adminUser.isActive || adminUser.role !== 'ADMIN') {
+        throw new BadRequestException('Invalid administrator');
+      }
+
+      return events.filter(
+        (event) => event.organizationId === adminUser.organizationId,
+      );
     }
 
     const assignments = await db.orm.public.UserEvent.all();
@@ -34,6 +52,7 @@ export class EventsController {
   @Post()
   @UseGuards(AccessGuard, AdminRoleGuard)
   async create(
+    @Req() request: AuthenticatedRequest,
     @Body()
     body: {
       name: string;
@@ -41,16 +60,66 @@ export class EventsController {
       location?: string;
       startsAt: string;
       endsAt?: string;
-      organizationId: number;
     },
   ) {
+    const admin = request.user!;
+
+    const users = await db.orm.public.User.all();
+
+    const adminUser = users.find((user) => user.id === admin.id);
+
+    if (!adminUser || !adminUser.isActive || adminUser.role !== 'ADMIN') {
+      throw new BadRequestException('Invalid administrator');
+    }
+
+    const name = typeof body?.name === 'string' ? body.name.trim() : '';
+
+    if (name.length < 3 || name.length > 150) {
+      throw new BadRequestException('Event name must contain 3-150 characters');
+    }
+
+    const description =
+      typeof body.description === 'string'
+        ? body.description.trim() || null
+        : null;
+
+    const location =
+      typeof body.location === 'string' ? body.location.trim() || null : null;
+
+    if (
+      typeof body.startsAt !== 'string' ||
+      !body.startsAt.trim() ||
+      !Number.isFinite(Date.parse(body.startsAt))
+    ) {
+      throw new BadRequestException('Invalid start date');
+    }
+
+    const startsAt = new Date(body.startsAt);
+
+    let endsAt: Date | null = null;
+
+    if (body.endsAt !== undefined && body.endsAt !== '') {
+      if (
+        typeof body.endsAt !== 'string' ||
+        !Number.isFinite(Date.parse(body.endsAt))
+      ) {
+        throw new BadRequestException('Invalid end date');
+      }
+
+      endsAt = new Date(body.endsAt);
+
+      if (endsAt <= startsAt) {
+        throw new BadRequestException('End date must be later than start date');
+      }
+    }
+
     return db.orm.public.Event.create({
-      name: body.name,
-      description: body.description,
-      location: body.location,
-      startsAt: body.startsAt,
-      endsAt: body.endsAt,
-      organizationId: body.organizationId,
+      name,
+      description,
+      location,
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt?.toISOString() ?? null,
+      organizationId: adminUser.organizationId,
     });
   }
 }

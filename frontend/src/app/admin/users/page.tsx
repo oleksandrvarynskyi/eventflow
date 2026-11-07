@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import LogoutButton from "@/components/LogoutButton";
 
 type UserRole = "ADMIN" | "ORGANIZER" | "RECEPTION";
 type NewUserRole = "ORGANIZER" | "RECEPTION";
@@ -138,15 +136,23 @@ export default function AdminUsersPage() {
   function toggleEvent(eventId: number) {
     setForm((current) => ({
       ...current,
-      eventIds: current.eventIds.includes(eventId)
-        ? current.eventIds.filter((id) => id !== eventId)
-        : [...current.eventIds, eventId],
+      eventIds:
+        current.role === "RECEPTION"
+          ? [eventId]
+          : current.eventIds.includes(eventId)
+            ? current.eventIds.filter((id) => id !== eventId)
+            : [...current.eventIds, eventId],
     }));
   }
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError("");
+
+    if (form.role === "RECEPTION" && form.eventIds.length !== 1) {
+      setFormError("Reception must be assigned to exactly one event");
+      return;
+    }
 
     if (form.password !== form.confirmPassword) {
       setFormError("Passwords do not match");
@@ -214,9 +220,12 @@ export default function AdminUsersPage() {
   function toggleEditEvent(eventId: number) {
     setEditForm((current) => ({
       ...current,
-      eventIds: current.eventIds.includes(eventId)
-        ? current.eventIds.filter((id) => id !== eventId)
-        : [...current.eventIds, eventId],
+      eventIds:
+        current.role === "RECEPTION"
+          ? [eventId]
+          : current.eventIds.includes(eventId)
+            ? current.eventIds.filter((id) => id !== eventId)
+            : [...current.eventIds, eventId],
     }));
   }
 
@@ -224,6 +233,11 @@ export default function AdminUsersPage() {
     event.preventDefault();
 
     if (editingUserId === null) return;
+
+    if (editForm.role === "RECEPTION" && editForm.eventIds.length !== 1) {
+      setEditError("Reception must be assigned to exactly one event");
+      return;
+    }
 
     setSaving(true);
     setEditError("");
@@ -240,6 +254,7 @@ export default function AdminUsersPage() {
           email: editForm.email.trim(),
           role: editForm.role,
           isActive: editForm.isActive,
+          eventIds: editForm.eventIds,
         }),
       });
 
@@ -247,27 +262,6 @@ export default function AdminUsersPage() {
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to update user");
-      }
-
-      const eventsResponse = await fetch(
-        `/api/admin/users/${editingUserId}/events`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            eventIds: editForm.eventIds,
-          }),
-        },
-      );
-
-      const eventsData = await eventsResponse.json();
-
-      if (!eventsResponse.ok) {
-        throw new Error(
-          eventsData.message || "Failed to update event assignments",
-        );
       }
 
       await loadUsers();
@@ -354,20 +348,9 @@ export default function AdminUsersPage() {
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white md:px-8">
-      {/* HEADER */}
-      <header className="mb-9 flex flex-wrap items-start justify-between gap-6">
+      {/* PAGE HEADER */}
+      <header className="mb-9 flex flex-wrap items-center justify-between gap-6">
         <div>
-          <p className="mb-2 text-sm font-semibold tracking-widest text-blue-400">
-            EVENTFLOW
-          </p>
-
-          <Link
-            href="/admin"
-            className="mb-3 inline-block text-sm text-blue-400 hover:text-blue-300"
-          >
-            &larr; Back to Dashboard
-          </Link>
-
           <h1 className="text-3xl font-bold text-white">Users Management</h1>
 
           <p className="mt-2 text-sm text-slate-400">
@@ -375,28 +358,17 @@ export default function AdminUsersPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 pt-1">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-sm font-semibold text-blue-400">
-              A
-            </span>
-
-            <span className="text-sm font-medium text-slate-300">admin</span>
-          </div>
-
-          <LogoutButton />
-
-          <button
-            type="button"
-            onClick={() => {
-              setFormError("");
-              setShowForm(true);
-            }}
-            className="rounded-lg bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-500"
-          >
-            + Add User
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setForm({ ...initialForm, eventIds: [] });
+            setFormError("");
+            setShowForm(true);
+          }}
+          className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-500"
+        >
+          + Add User
+        </button>
       </header>
 
       {error && (
@@ -548,9 +520,18 @@ export default function AdminUsersPage() {
                   Role
                   <select
                     value={form.role}
-                    onChange={(e) =>
-                      setForm({ ...form, role: e.target.value as NewUserRole })
-                    }
+                    onChange={(e) => {
+                      const role = e.target.value as NewUserRole;
+
+                      setForm((current) => ({
+                        ...current,
+                        role,
+                        eventIds:
+                          role === "RECEPTION"
+                            ? current.eventIds.slice(0, 1)
+                            : current.eventIds,
+                      }));
+                    }}
                     className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
                   >
                     <option value="ORGANIZER">Organizer</option>
@@ -602,7 +583,14 @@ export default function AdminUsersPage() {
                         className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-sm hover:bg-slate-800"
                       >
                         <input
-                          type="checkbox"
+                          type={
+                            form.role === "RECEPTION" ? "radio" : "checkbox"
+                          }
+                          name={
+                            form.role === "RECEPTION"
+                              ? "create-reception-event"
+                              : undefined
+                          }
                           className="h-4 w-4 accent-blue-500"
                           checked={form.eventIds.includes(event.id)}
                           onChange={() => toggleEvent(event.id)}
@@ -707,12 +695,18 @@ export default function AdminUsersPage() {
                   Role
                   <select
                     value={editForm.role}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        role: e.target.value as NewUserRole,
-                      })
-                    }
+                    onChange={(e) => {
+                      const role = e.target.value as NewUserRole;
+
+                      setEditForm((current) => ({
+                        ...current,
+                        role,
+                        eventIds:
+                          role === "RECEPTION"
+                            ? current.eventIds.slice(0, 1)
+                            : current.eventIds,
+                      }));
+                    }}
                     className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
                   >
                     <option value="ORGANIZER">Organizer</option>
@@ -745,7 +739,14 @@ export default function AdminUsersPage() {
                         className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-sm hover:bg-slate-800"
                       >
                         <input
-                          type="checkbox"
+                          type={
+                            editForm.role === "RECEPTION" ? "radio" : "checkbox"
+                          }
+                          name={
+                            editForm.role === "RECEPTION"
+                              ? "edit-reception-event"
+                              : undefined
+                          }
                           className="h-4 w-4 accent-blue-500"
                           checked={editForm.eventIds.includes(event.id)}
                           onChange={() => toggleEditEvent(event.id)}

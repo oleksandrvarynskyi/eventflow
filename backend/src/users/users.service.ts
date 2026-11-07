@@ -24,6 +24,7 @@ export type UpdateUserDto = {
   email?: string | null;
   role?: 'ORGANIZER' | 'RECEPTION';
   isActive?: boolean;
+  eventIds?: number[];
 };
 
 @Injectable()
@@ -86,6 +87,12 @@ export class UsersService {
     }
 
     const eventIds = body.eventIds ?? [];
+
+    if (body.role === 'RECEPTION' && eventIds.length !== 1) {
+      throw new BadRequestException(
+        'Reception user must be assigned to exactly one event',
+      );
+    }
 
     if (
       !Array.isArray(eventIds) ||
@@ -236,17 +243,94 @@ export class UsersService {
       updates.isActive = body.isActive;
     }
 
-    if (Object.keys(updates).length === 0) {
+    const assignments = await db.orm.public.UserEvent.all();
+
+    const currentEventIds = assignments
+      .filter((item) => item.userId === userId)
+      .map((item) => item.eventId);
+
+    const eventIds = body.eventIds ?? currentEventIds;
+
+    if (
+      !Array.isArray(eventIds) ||
+      eventIds.some((id) => !Number.isSafeInteger(id) || id <= 0) ||
+      new Set(eventIds).size !== eventIds.length
+    ) {
+      throw new BadRequestException('Invalid event IDs');
+    }
+
+    const finalRole = updates.role ?? user.role;
+
+    if (finalRole === 'RECEPTION' && eventIds.length !== 1) {
+      throw new BadRequestException(
+        'Reception user must be assigned to exactly one event',
+      );
+    }
+
+    if (body.eventIds !== undefined) {
+      const events = await db.orm.public.Event.all();
+
+      for (const eventId of eventIds) {
+        const event = events.find((item) => item.id === eventId);
+
+        if (!event || event.organizationId !== admin.organizationId) {
+          throw new BadRequestException(`Event ${eventId} is not available`);
+        }
+      }
+    }
+
+    if (Object.keys(updates).length === 0 && body.eventIds === undefined) {
       throw new BadRequestException('No fields to update');
     }
 
-    await db.orm.public.User.where({
-      id: userId,
-    }).update(updates);
+    const updatedUser = await db.transaction(async (tx) => {
+      if (Object.keys(updates).length > 0) {
+        await tx.orm.public.User.where({
+          id: userId,
+        }).update(updates);
+      }
 
-    const usersAfterUpdate = await db.orm.public.User.all();
+      if (body.eventIds !== undefined) {
+        const currentAssignments = await tx.orm.public.UserEvent.all();
 
-    const updatedUser = usersAfterUpdate.find((item) => item.id === userId);
+        const current = currentAssignments.filter(
+          (item) => item.userId === userId,
+        );
+
+        const currentIds = new Set(current.map((item) => item.eventId));
+
+        const requestedIds = new Set(eventIds);
+
+        // Remove assignments that are no longer needed.
+        for (const assignment of current) {
+          if (!requestedIds.has(assignment.eventId)) {
+            await tx.orm.public.UserEvent.where({
+              id: assignment.id,
+            }).delete();
+          }
+        }
+
+        // Add new assignments.
+        for (const eventId of eventIds) {
+          if (!currentIds.has(eventId)) {
+            await tx.orm.public.UserEvent.create({
+              userId,
+              eventId,
+            });
+          }
+        }
+      }
+
+      const usersAfterUpdate = await tx.orm.public.User.all();
+
+      const result = usersAfterUpdate.find((item) => item.id === userId);
+
+      if (!result) {
+        throw new NotFoundException('User not found after update');
+      }
+
+      return result;
+    });
 
     if (!updatedUser) {
       throw new NotFoundException('User not found after update');
@@ -289,6 +373,12 @@ export class UsersService {
       new Set(eventIds).size !== eventIds.length
     ) {
       throw new BadRequestException('Invalid event IDs');
+    }
+
+    if (user.role === 'RECEPTION' && eventIds.length !== 1) {
+      throw new BadRequestException(
+        'Reception user must be assigned to exactly one event',
+      );
     }
 
     const events = await db.orm.public.Event.all();

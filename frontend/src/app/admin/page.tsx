@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import AddAttendeeForm from "@/components/AddAttendeeForm";
 import EditAttendeeModal from "@/components/EditAttendeeModal";
-import LogoutButton from "@/components/LogoutButton";
 
 type Attendee = {
   id: number;
@@ -29,6 +28,18 @@ export default function AdminDashboard() {
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [eventsLoading, setEventsLoading] = useState(true);
+
+  const [createEventOpen, setCreateEventOpen] = useState(false);
+  const [creatingEvent, setCreatingEvent] = useState(false);
+  const [createEventError, setCreateEventError] = useState("");
+
+  const [createEventForm, setCreateEventForm] = useState({
+    name: "",
+    description: "",
+    location: "",
+    startsAt: "",
+    endsAt: "",
+  });
 
   const [activeTab, setActiveTab] = useState<Tab>("registrations");
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -70,6 +81,99 @@ export default function AdminDashboard() {
 
     void loadEvents();
   }, []);
+
+  async function handleCreateEvent(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (creatingEvent) return;
+
+    setCreatingEvent(true);
+    setCreateEventError("");
+
+    try {
+      const name = createEventForm.name.trim();
+
+      if (name.length < 3 || name.length > 150) {
+        throw new Error("Event name must contain 3–150 characters.");
+      }
+
+      if (!createEventForm.startsAt) {
+        throw new Error("Start date is required.");
+      }
+
+      const startsAt = new Date(createEventForm.startsAt);
+
+      if (Number.isNaN(startsAt.getTime())) {
+        throw new Error("Invalid start date.");
+      }
+
+      let endsAt: Date | null = null;
+
+      if (createEventForm.endsAt) {
+        endsAt = new Date(createEventForm.endsAt);
+
+        if (Number.isNaN(endsAt.getTime())) {
+          throw new Error("Invalid end date.");
+        }
+
+        if (endsAt <= startsAt) {
+          throw new Error("End date must be later than start date.");
+        }
+      }
+
+      const response = await fetch("/api/admin/events", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          description: createEventForm.description.trim(),
+          location: createEventForm.location.trim(),
+          startsAt: startsAt.toISOString(),
+          ...(endsAt ? { endsAt: endsAt.toISOString() } : {}),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create event.");
+      }
+
+      const newEvent = data as Event;
+
+      // Add new event to the selector
+      setEvents((previous) => [...previous, newEvent]);
+
+      // Automatically select the new event
+      setSelectedEventId(newEvent.id);
+
+      // Reset dashboard state
+      setSearch("");
+      setActiveTab("registrations");
+      setAddModalOpen(false);
+      setEditingAttendee(null);
+      setDeletingAttendee(null);
+
+      // Reset form
+      setCreateEventForm({
+        name: "",
+        description: "",
+        location: "",
+        startsAt: "",
+        endsAt: "",
+      });
+
+      setCreateEventOpen(false);
+    } catch (error) {
+      setCreateEventError(
+        error instanceof Error ? error.message : "Unable to create event.",
+      );
+    } finally {
+      setCreatingEvent(false);
+    }
+  }
 
   // Load attendees
   const loadAttendees = useCallback(async () => {
@@ -169,43 +273,36 @@ export default function AdminDashboard() {
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white md:px-8">
       <div className="mx-auto w-full max-w-[1600px]">
-        {/* HEADER */}
-        {/* HEADER */}
-        <header className="mb-8 flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <p className="mb-2 text-sm font-semibold tracking-widest text-blue-400">
-              EVENTFLOW
-            </p>
+        {/* PAGE HEADER */}
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
 
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-
-            <p className="mt-2 text-sm text-slate-400">
-              Manage event registrations and attendance.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 pt-1">
-            <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-sm font-semibold text-blue-400">
-                A
-              </span>
-
-              <span className="text-sm font-medium text-slate-300">admin</span>
-            </div>
-
-            <LogoutButton />
-          </div>
+          <p className="mt-2 text-sm text-slate-400">
+            Manage event registrations and attendance.
+          </p>
         </header>
 
         {/* EVENT SELECT */}
         <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900 p-5">
-          <label
-            htmlFor="event-select"
-            className="mb-2 block text-sm font-medium text-slate-400"
-          >
-            Select Event
-          </label>
+          <div className="mb-3 flex items-center justify-between gap-4">
+            <label
+              htmlFor="event-select"
+              className="block text-sm font-medium text-slate-400"
+            >
+              Select Event
+            </label>
 
+            <button
+              type="button"
+              onClick={() => {
+                setCreateEventError("");
+                setCreateEventOpen(true);
+              }}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+            >
+              + Create Event
+            </button>
+          </div>
           <select
             id="event-select"
             value={selectedEventId ?? ""}
@@ -451,6 +548,186 @@ export default function AdminDashboard() {
               </div>
             </div>
           </section>
+        )}
+
+        {/* CREATE EVENT MODAL */}
+        {createEventOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/70 p-4"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget && !creatingEvent) {
+                setCreateEventOpen(false);
+              }
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="create-event-title"
+              className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+            >
+              <div className="mb-6 flex items-center justify-between">
+                <h2 id="create-event-title" className="text-xl font-bold">
+                  Create Event
+                </h2>
+
+                <button
+                  type="button"
+                  onClick={() => setCreateEventOpen(false)}
+                  disabled={creatingEvent}
+                  aria-label="Close dialog"
+                  className="text-2xl text-slate-400 hover:text-white disabled:opacity-50"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateEvent} className="space-y-5">
+                <div>
+                  <label
+                    htmlFor="event-name"
+                    className="mb-2 block text-sm font-medium text-slate-300"
+                  >
+                    Event Name *
+                  </label>
+
+                  <input
+                    id="event-name"
+                    type="text"
+                    required
+                    minLength={3}
+                    maxLength={150}
+                    value={createEventForm.name}
+                    onChange={(e) =>
+                      setCreateEventForm((previous) => ({
+                        ...previous,
+                        name: e.target.value,
+                      }))
+                    }
+                    placeholder="Scientific Conference 2026"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="event-description"
+                    className="mb-2 block text-sm font-medium text-slate-300"
+                  >
+                    Description
+                  </label>
+
+                  <textarea
+                    id="event-description"
+                    rows={3}
+                    value={createEventForm.description}
+                    onChange={(e) =>
+                      setCreateEventForm((previous) => ({
+                        ...previous,
+                        description: e.target.value,
+                      }))
+                    }
+                    placeholder="Optional event description"
+                    className="w-full resize-none rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="event-location"
+                    className="mb-2 block text-sm font-medium text-slate-300"
+                  >
+                    Location
+                  </label>
+
+                  <input
+                    id="event-location"
+                    type="text"
+                    value={createEventForm.location}
+                    onChange={(e) =>
+                      setCreateEventForm((previous) => ({
+                        ...previous,
+                        location: e.target.value,
+                      }))
+                    }
+                    placeholder="Calgary, Alberta"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="event-start"
+                    className="mb-2 block text-sm font-medium text-slate-300"
+                  >
+                    Start Date & Time *
+                  </label>
+
+                  <input
+                    id="event-start"
+                    type="datetime-local"
+                    required
+                    value={createEventForm.startsAt}
+                    onChange={(e) =>
+                      setCreateEventForm((previous) => ({
+                        ...previous,
+                        startsAt: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="event-end"
+                    className="mb-2 block text-sm font-medium text-slate-300"
+                  >
+                    End Date & Time
+                  </label>
+
+                  <input
+                    id="event-end"
+                    type="datetime-local"
+                    min={createEventForm.startsAt || undefined}
+                    value={createEventForm.endsAt}
+                    onChange={(e) =>
+                      setCreateEventForm((previous) => ({
+                        ...previous,
+                        endsAt: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                {createEventError && (
+                  <p role="alert" className="text-sm text-red-400">
+                    {createEventError}
+                  </p>
+                )}
+
+                <div className="flex justify-end gap-3 border-t border-slate-800 pt-5">
+                  <button
+                    type="button"
+                    onClick={() => setCreateEventOpen(false)}
+                    disabled={creatingEvent}
+                    className="rounded-lg border border-slate-700 px-5 py-3 text-sm font-semibold transition hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={creatingEvent}
+                    className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold transition hover:bg-blue-500 disabled:opacity-50"
+                  >
+                    {creatingEvent ? "Creating..." : "Create Event"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         )}
 
         {/* ADD ATTENDEE MODAL */}

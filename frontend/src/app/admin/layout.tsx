@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { getUserSession } from "@/lib/auth";
 import AdminSessionGuard from "@/components/AdminSessionGuard";
+import AdminNavigation from "@/components/AdminNavigation";
 
 export const dynamic = "force-dynamic";
 
@@ -16,5 +17,10 @@ export default async function AdminLayout({
     redirect("/");
   }
 
-  return <AdminSessionGuard userId={user.id}>{children}</AdminSessionGuard>;
+  return (
+    <AdminSessionGuard userId={user.id}>
+      <AdminNavigation />
+      {children}
+    </AdminSessionGuard>
+  );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import QRScanner from "@/components/QRScanner";
+import LogoutButton from "@/components/LogoutButton";
 
 type ReceptionMode = "scanner" | "manual";
 
@@ -204,76 +205,82 @@ export default function Home() {
   }
 
   async function handleManualCheckIn(attendee: Attendee) {
-    if (!attendee.registrationToken || attendee.checkedInAt || loading) {
+    if (
+      attendee.checkedInAt ||
+      loading ||
+      checkingInAttendeeId !== null ||
+      selectedEventId === null
+    ) {
       return;
     }
 
     setCheckingInAttendeeId(attendee.id);
+    setError("");
 
     try {
-      await handleCheckIn(attendee.registrationToken);
+      const response = await fetch(
+        `/api/reception/events/${selectedEventId}/check-in/manual`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            attendeeId: attendee.id,
+          }),
+          cache: "no-store",
+        },
+      );
+
+      const data: CheckInResult = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "Manual check-in failed.");
+        return;
+      }
+
+      showNotification(data);
+
+      if (data.status === "ACCESS_GRANTED") {
+        await loadAttendees();
+      }
+    } catch {
+      setError("Unable to connect to the server.");
     } finally {
       setCheckingInAttendeeId(null);
     }
   }
 
+  const selectedEvent = events.find((event) => event.id === selectedEventId);
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-4 text-white md:px-6">
       <div className="mx-auto w-full max-w-[1600px] rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl">
-        {/* COMPACT HEADER */}
-        <div className="mb-4 rounded-xl border border-slate-700 bg-slate-950/40 px-5 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            {/* TITLE */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-bold tracking-widest text-blue-400">
-                EVENTFLOW
-              </span>
+        {/* RECEPTION HEADER */}
+        <div className="mb-4 rounded-xl border border-slate-700 bg-slate-950/40 px-5 py-5">
+          {/* TOP BAR */}
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-sm font-bold tracking-widest text-blue-400">
+              EVENTFLOW
+            </span>
 
-              <span className="text-slate-600">|</span>
-
-              <h1 className="text-xl font-bold">Reception Dashboard</h1>
-            </div>
-
-            {/* EVENT SELECT */}
-            <div className="flex w-full items-center gap-3 sm:w-auto">
-              <label
-                htmlFor="event-select"
-                className="shrink-0 text-sm font-medium text-slate-400"
-              >
-                Event:
-              </label>
-
-              <select
-                id="event-select"
-                value={selectedEventId ?? ""}
-                onChange={(e) => {
-                  setSelectedEventId(Number(e.target.value));
-                  setResult(null);
-                  setError("");
-                  setScannerOpen(false);
-                  setReceptionMode("scanner");
-                  setAttendeeSearch("");
-                }}
-                disabled={eventsLoading || events.length === 0}
-                className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-blue-500 sm:w-[300px] sm:flex-none"
-              >
-                {eventsLoading ? (
-                  <option value="">Loading events...</option>
-                ) : events.length === 0 ? (
-                  <option value="">No events available</option>
-                ) : (
-                  events.map((event) => (
-                    <option key={event.id} value={event.id}>
-                      {event.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
+            <LogoutButton />
           </div>
 
-          {/* COMPACT STATISTICS */}
-          <div className="mt-3 flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-slate-800 pt-3">
+          {/* EVENT TITLE */}
+          <div className="px-2 py-8 text-center">
+            <h1 className="break-words text-3xl font-extrabold tracking-wide text-white md:text-4xl">
+              {eventsLoading
+                ? "Loading event..."
+                : (selectedEvent?.name ?? "No event available")}
+            </h1>
+
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
+              Reception Panel
+            </p>
+          </div>
+
+          {/* STATISTICS */}
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-3 border-t border-slate-800 pt-4">
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-400">Total:</span>
               <span className="text-lg font-bold">
@@ -437,7 +444,7 @@ export default function Home() {
                                 disabled={
                                   loading ||
                                   checkingInAttendeeId !== null ||
-                                  !attendee.registrationToken
+                                  selectedEventId === null
                                 }
                                 className="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
                               >

@@ -40,9 +40,14 @@ export async function GET() {
     });
 
     const data = await response.json();
-
     return NextResponse.json(data, {
       status: response.status,
+      headers: {
+        "Cache-Control":
+          "private, no-store, no-cache, max-age=0, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
     });
   } catch {
     return NextResponse.json(

@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Post,
@@ -59,6 +61,58 @@ export class CheckInController {
     return {
       status: 'ACCESS_GRANTED',
       message: 'Check-in successful',
+      attendeeId: attendee.id,
+      attendeeName: `${attendee.firstName} ${attendee.lastName}`,
+      checkedInAt: updatedAttendee.checkedInAt,
+    };
+  }
+
+  @Post('manual')
+  @UseGuards(AccessGuard, EventAccessGuard)
+  async manualCheckIn(
+    @Param('eventId', ParseIntPipe) eventId: number,
+    @Body() body: { attendeeId: number },
+  ) {
+    if (!Number.isInteger(body?.attendeeId) || body.attendeeId <= 0) {
+      throw new BadRequestException('Invalid attendeeId');
+    }
+
+    const attendees = await db.orm.public.Attendee.all();
+
+    const attendee = attendees.find(
+      (item) => item.id === body.attendeeId && item.eventId === eventId,
+    );
+
+    if (!attendee) {
+      throw new NotFoundException('Attendee not found for this event');
+    }
+
+    if (attendee.checkedInAt) {
+      return {
+        status: 'ALREADY_CHECKED_IN',
+        message: 'This attendee has already checked in',
+        checkedInAt: attendee.checkedInAt,
+      };
+    }
+
+    const checkedInAt = new Date().toISOString();
+
+    const updatedAttendee = await db.orm.public.Attendee.where({
+      id: attendee.id,
+      eventId,
+      checkedInAt: null,
+    }).update({ checkedInAt });
+
+    if (!updatedAttendee) {
+      return {
+        status: 'ALREADY_CHECKED_IN',
+        message: 'This attendee has already checked in',
+      };
+    }
+
+    return {
+      status: 'ACCESS_GRANTED',
+      message: 'Manual check-in successful',
       attendeeId: attendee.id,
       attendeeName: `${attendee.firstName} ${attendee.lastName}`,
       checkedInAt: updatedAttendee.checkedInAt,
