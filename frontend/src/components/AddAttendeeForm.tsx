@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-
 type AddAttendeeFormProps = {
   eventId: number;
   onSuccess: () => void;
+  role?: "ADMIN" | "ORGANIZER";
 };
 
 export default function AddAttendeeForm({
   eventId,
   onSuccess,
+  role = "ADMIN",
 }: AddAttendeeFormProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -28,7 +29,9 @@ export default function AddAttendeeForm({
     setSuccess("");
 
     try {
-      const response = await fetch(`/api/admin/events/${eventId}/attendees`, {
+      const apiBase =
+        role === "ADMIN" ? "/api/admin/events" : "/api/organizer/events";
+      const response = await fetch(`${apiBase}/${eventId}/attendees`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

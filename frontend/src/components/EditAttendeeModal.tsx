@@ -14,6 +14,7 @@ type Props = {
   attendee: Attendee;
   onClose: () => void;
   onSuccess: () => void;
+  role?: "ADMIN" | "ORGANIZER";
 };
 
 export default function EditAttendeeModal({
@@ -21,6 +22,7 @@ export default function EditAttendeeModal({
   attendee,
   onClose,
   onSuccess,
+  role = "ADMIN",
 }: Props) {
   const [firstName, setFirstName] = useState(attendee.firstName);
   const [lastName, setLastName] = useState(attendee.lastName);
@@ -37,8 +39,11 @@ export default function EditAttendeeModal({
     setError("");
 
     try {
+      const apiBase =
+        role === "ADMIN" ? "/api/admin/events" : "/api/organizer/events";
+
       const response = await fetch(
-        `/api/admin/events/${eventId}/attendees/${attendee.id}`,
+        `${apiBase}/${eventId}/attendees/${attendee.id}`,
         {
           method: "PATCH",
           headers: {
