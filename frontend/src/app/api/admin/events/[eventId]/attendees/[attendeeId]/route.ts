@@ -10,7 +10,7 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   const user = await getUserSession();
-  const isAuthenticated = user?.role === "ADMIN" || user?.role === "ORGANIZER";
+  const isAuthenticated = user?.role === "ADMIN";
 
   if (!isAuthenticated) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -77,7 +77,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   const user = await getUserSession();
-  const isAuthenticated = user?.role === "ADMIN" || user?.role === "ORGANIZER";
+  const isAuthenticated = user?.role === "ADMIN";
 
   if (!isAuthenticated) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });

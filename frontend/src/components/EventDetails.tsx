@@ -78,7 +78,11 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
 
   // Load attendees
   const loadAttendees = useCallback(async () => {
-    if (selectedEventId === null) return;
+    if (eventsLoading) return;
+
+    const hasAccess = events.some((event) => event.id === selectedEventId);
+
+    if (!hasAccess) return;
 
     setStatsLoading(true);
 
@@ -98,14 +102,22 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
     } finally {
       setStatsLoading(false);
     }
-  }, [selectedEventId, apiBase]);
+  }, [selectedEventId, apiBase, events, eventsLoading]);
 
   useEffect(() => {
-    if (selectedEventId === null) return;
+    if (eventsLoading) return;
+
+    const hasAccess = events.some((event) => event.id === selectedEventId);
+
+    if (!hasAccess) {
+      setAttendees([]);
+      setStatsLoading(false);
+      return;
+    }
 
     setAttendees([]);
     void loadAttendees();
-  }, [selectedEventId, loadAttendees]);
+  }, [selectedEventId, events, eventsLoading, loadAttendees]);
 
   async function handleDeleteAttendee() {
     if (!deletingAttendee || selectedEventId === null || deleteLoading) {
@@ -171,6 +183,22 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
     .slice(0, 10);
 
   const selectedEvent = events.find((event) => event.id === eventId);
+
+  if (eventsLoading) {
+    return (
+      <main className="min-h-screen bg-slate-950 px-4 py-8 text-white md:px-8">
+        <p className="text-slate-400">Loading event...</p>
+      </main>
+    );
+  }
+
+  if (!selectedEvent) {
+    return (
+      <main className="min-h-screen bg-slate-950 px-4 py-8 text-white md:px-8">
+        <p className="text-red-400">Event not found.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white md:px-8">
