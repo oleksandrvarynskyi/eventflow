@@ -26,6 +26,9 @@ export default function CheckInHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<
+    "newest" | "oldest" | "name_asc" | "name_desc"
+  >("newest");
   const [currentPage, setCurrentPage] = useState(1);
 
   const ITEMS_PER_PAGE = 10;
@@ -110,10 +113,31 @@ export default function CheckInHistoryPage() {
 
   const checkInHistory = attendees
     .filter((attendee) => attendee.checkedInAt !== null)
-    .sort(
-      (a, b) =>
-        new Date(b.checkedInAt!).getTime() - new Date(a.checkedInAt!).getTime(),
-    );
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "oldest":
+          return (
+            new Date(a.checkedInAt!).getTime() -
+            new Date(b.checkedInAt!).getTime()
+          );
+
+        case "name_asc":
+          return `${a.firstName} ${a.lastName}`.localeCompare(
+            `${b.firstName} ${b.lastName}`,
+          );
+
+        case "name_desc":
+          return `${b.firstName} ${b.lastName}`.localeCompare(
+            `${a.firstName} ${a.lastName}`,
+          );
+
+        default:
+          return (
+            new Date(b.checkedInAt!).getTime() -
+            new Date(a.checkedInAt!).getTime()
+          );
+      }
+    });
 
   const filteredHistory = checkInHistory.filter((attendee) => {
     const query = search.trim().toLowerCase();
@@ -272,6 +296,36 @@ export default function CheckInHistoryPage() {
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">Check-in Records</h2>
 
+            <div className="flex items-center gap-3">
+              <label
+                htmlFor="history-sort"
+                className="whitespace-nowrap text-sm text-slate-400"
+              >
+                Sort By:
+              </label>
+
+              <select
+                id="history-sort"
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(
+                    e.target.value as
+                      | "newest"
+                      | "oldest"
+                      | "name_asc"
+                      | "name_desc",
+                  );
+                  setCurrentPage(1);
+                }}
+                className="rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white outline-none focus:border-blue-500"
+              >
+                <option value="newest">Check-in Time (Newest)</option>
+                <option value="oldest">Check-in Time (Oldest)</option>
+                <option value="name_asc">Attendee (A–Z)</option>
+                <option value="name_desc">Attendee (Z–A)</option>
+              </select>
+            </div>
+
             <div className="flex flex-wrap items-center gap-3">
               <div className="rounded-lg border border-green-800 bg-green-950/40 px-4 py-2 text-sm font-semibold text-green-400">
                 Total Check-ins: {loading ? "..." : checkInHistory.length}
@@ -301,7 +355,6 @@ export default function CheckInHistoryPage() {
               <table className="w-full min-w-[650px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-700 text-slate-400">
-                    <th className="px-4 py-3">ID</th>
                     <th className="px-4 py-3">Attendee</th>
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">Check-in Time</th>
@@ -314,10 +367,6 @@ export default function CheckInHistoryPage() {
                       key={attendee.id}
                       className="border-b border-slate-800 last:border-0"
                     >
-                      <td className="px-4 py-4 text-slate-400">
-                        {attendee.id}
-                      </td>
-
                       <td className="px-4 py-4 font-medium">
                         {attendee.firstName} {attendee.lastName}
                       </td>

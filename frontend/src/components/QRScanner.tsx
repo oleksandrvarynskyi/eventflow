@@ -45,9 +45,15 @@ export default function QRScanner({ onScan }: QRScannerProps) {
           {
             fps: 10,
             qrbox: (viewfinderWidth, viewfinderHeight) => {
-              const size = Math.min(
-                220,
-                Math.floor(Math.min(viewfinderWidth, viewfinderHeight) * 0.8),
+              const availableSize = Math.min(viewfinderWidth, viewfinderHeight);
+
+              if (availableSize < 63) {
+                return { width: 50, height: 50 };
+              }
+
+              const size = Math.max(
+                50,
+                Math.min(220, Math.floor(availableSize * 0.8)),
               );
 
               return {

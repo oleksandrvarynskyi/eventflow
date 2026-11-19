@@ -23,6 +23,7 @@ export class ReceptionAttendeesController {
         id: item.id,
         firstName: item.firstName,
         lastName: item.lastName,
+        email: item.email,
         checkedInAt: item.checkedInAt,
       }));
   }

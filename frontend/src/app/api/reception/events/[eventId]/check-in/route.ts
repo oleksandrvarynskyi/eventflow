@@ -15,11 +15,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
-  if (
-    user.role !== "ADMIN" &&
-    user.role !== "RECEPTION" &&
-    user.role !== "ORGANIZER"
-  ) {
+  if (user.role !== "RECEPTION") {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 

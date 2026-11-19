@@ -57,13 +57,45 @@ export class AttendeesController {
   ) {
     const registrationToken = randomUUID();
 
-    return db.orm.public.Attendee.create({
+    // 1. Save attendee
+    const attendee = await db.orm.public.Attendee.create({
       firstName: body.firstName,
       lastName: body.lastName,
       email: body.email,
       eventId,
       registrationToken,
     });
+
+    // 2. Find event details
+    const events = await db.orm.public.Event.all();
+    const event = events.find((item) => item.id === eventId);
+
+    // 3. Send QR ticket
+    if (event) {
+      try {
+        await this.emailService.sendRegistrationConfirmation({
+          to: attendee.email,
+          firstName: attendee.firstName,
+          eventName: event.name,
+          eventLocation: event.location,
+          eventStartsAt: event.startsAt,
+          registrationToken,
+        });
+
+        this.logger.log(`Registration ticket sent for attendee ${attendee.id}`);
+      } catch (error) {
+        this.logger.error(
+          `Failed to send registration ticket for attendee ${attendee.id}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
+    } else {
+      this.logger.warn(
+        `Event ${eventId} not found. Ticket not sent for attendee ${attendee.id}`,
+      );
+    }
+
+    return attendee;
   }
 
   // PATCH /api/events/:eventId/attendees/:attendeeId

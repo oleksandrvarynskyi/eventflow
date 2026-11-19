@@ -51,6 +51,10 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
+  const [resendingId, setResendingId] = useState<number | null>(null);
+  const [resendMessage, setResendMessage] = useState("");
+  const [resendError, setResendError] = useState(false);
+
   // Load events
   useEffect(() => {
     async function loadEvents() {
@@ -118,6 +122,42 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
     setAttendees([]);
     void loadAttendees();
   }, [selectedEventId, events, eventsLoading, loadAttendees]);
+
+  useEffect(() => {
+    if (!resendMessage) return;
+
+    const timer = setTimeout(() => {
+      setResendMessage("");
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [resendMessage]);
+
+  async function handleResendTicket(attendee: Attendee) {
+    if (selectedEventId === null || resendingId !== null) return;
+
+    setResendingId(attendee.id);
+    setResendMessage("");
+    setResendError(false);
+
+    try {
+      const response = await fetch(
+        `${apiBase}/${selectedEventId}/attendees/${attendee.id}/resend-ticket`,
+        { method: "POST" },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to resend ticket");
+      }
+
+      setResendMessage(`Ticket sent to ${attendee.email}`);
+    } catch {
+      setResendError(true);
+      setResendMessage(`Failed to send ticket to ${attendee.email}`);
+    } finally {
+      setResendingId(null);
+    }
+  }
 
   async function handleDeleteAttendee() {
     if (!deletingAttendee || selectedEventId === null || deleteLoading) {
@@ -202,6 +242,18 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
 
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white md:px-8">
+      {resendMessage && (
+        <div
+          role="status"
+          className={`fixed right-6 top-6 z-50 rounded-xl border px-5 py-4 shadow-xl ${
+            resendError
+              ? "border-red-500 bg-red-950 text-red-200"
+              : "border-emerald-500 bg-emerald-950 text-emerald-200"
+          }`}
+        >
+          {resendMessage}
+        </div>
+      )}
       <div className="mx-auto w-full max-w-[1600px]">
         {/* EVENT DETAILS HEADER */}
         <header className="mb-8">
@@ -350,6 +402,17 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
                           className="mr-4 font-medium text-blue-400 transition hover:text-blue-300"
                         >
                           Edit
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => void handleResendTicket(attendee)}
+                          disabled={resendingId !== null}
+                          className="mr-4 font-medium text-emerald-400 transition hover:text-emerald-300 disabled:opacity-50"
+                        >
+                          {resendingId === attendee.id
+                            ? "Sending..."
+                            : "Resend Ticket"}
                         </button>
 
                         <button

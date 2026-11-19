@@ -151,13 +151,16 @@ export default function Home() {
 
       if (!query) return false;
 
-      const fullName =
-        `${attendee.firstName} ${attendee.lastName}`.toLowerCase();
+      const firstName = (attendee.firstName ?? "").toLowerCase();
+      const lastName = (attendee.lastName ?? "").toLowerCase();
+      const email = (attendee.email ?? "").toLowerCase();
+
+      const fullName = `${firstName} ${lastName}`;
 
       return (
-        attendee.firstName.toLowerCase().includes(query) ||
-        attendee.lastName.toLowerCase().includes(query) ||
-        attendee.email.toLowerCase().includes(query) ||
+        firstName.includes(query) ||
+        lastName.includes(query) ||
+        email.includes(query) ||
         fullName.includes(query)
       );
     })
