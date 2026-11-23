@@ -1,20 +1,14 @@
-import {
-  Controller,
-  Get,
-  NotFoundException,
-  Param,
-  ParseIntPipe,
-} from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
 
 import { db } from '../prisma/db.js';
 
 @Controller('events')
 export class PublicEventController {
-  @Get(':eventId/public')
-  async getPublicEvent(@Param('eventId', ParseIntPipe) eventId: number) {
+  @Get(':publicSlug/public')
+  async getPublicEvent(@Param('publicSlug') publicSlug: string) {
     const events = await db.orm.public.Event.all();
 
-    const event = events.find((item) => item.id === eventId);
+    const event = events.find((item) => item.publicSlug === publicSlug);
 
     if (!event) {
       throw new NotFoundException('Event not found');

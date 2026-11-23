@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 
 type RouteContext = {
-  params: Promise<{ eventId: string }>;
+  params: Promise<{ publicSlug: string }>;
 };
 
 export async function GET(_request: Request, context: RouteContext) {
-  const { eventId } = await context.params;
+  const { publicSlug } = await context.params;
 
-  if (!/^[1-9]\d*$/.test(eventId)) {
-    return NextResponse.json({ message: "Invalid event ID" }, { status: 400 });
+  if (!/^[A-Za-z0-9_-]{24}$/.test(publicSlug)) {
+    return NextResponse.json(
+      { message: "Invalid registration link" },
+      { status: 400 },
+    );
   }
 
   const backendUrl = process.env.BACKEND_API_URL;
@@ -21,10 +24,9 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   try {
-    const response = await fetch(`${backendUrl}/events/${eventId}/public`, {
+    const response = await fetch(`${backendUrl}/events/${publicSlug}/public`, {
       cache: "no-store",
     });
-
     const data = await response.json();
 
     return NextResponse.json(data, { status: response.status });

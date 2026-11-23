@@ -217,6 +217,13 @@
                   "kind": "scalar"
                 }
               },
+              "publicSlug": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "startsAt": {
                 "nullable": false,
                 "type": {
@@ -302,6 +309,9 @@
                 },
                 "organizationId": {
                   "column": "organizationId"
+                },
+                "publicSlug": {
+                  "column": "publicSlug"
                 },
                 "startsAt": {
                   "column": "startsAt"
@@ -770,6 +780,11 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "publicSlug": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "startsAt": {
                   "codecId": "pg/timestamptz-string@1",
                   "nativeType": "timestamptz",
@@ -814,7 +829,13 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "publicSlug"
+                  ]
+                }
+              ]
             },
             "organization": {
               "columns": {
@@ -1088,7 +1109,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "622fe83f480f6fa6f508cd0b58e8c2e2bcff64a64c50d1392017f24ba67baade"
+    "storageHash": "9ef0d02943b1fa23a6d40abb192630ee6895da4e5fcb865fa3b1d66574a54021"
   },
   "execution": {
     "executionHash": "75039d551cfe3f276db5955e67d9003e2123d5d3c7dc9228426853d04a45b375",

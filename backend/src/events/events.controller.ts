@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
   BadRequestException,
   Body,
@@ -116,6 +117,8 @@ export class EventsController {
       }
     }
 
+    const publicSlug = randomBytes(18).toString('base64url');
+
     return db.orm.public.Event.create({
       name,
       description,
@@ -123,6 +126,7 @@ export class EventsController {
       startsAt: startsAt.toISOString(),
       endsAt: endsAt?.toISOString() ?? null,
       organizationId: adminUser.organizationId,
+      publicSlug,
     });
   }
 

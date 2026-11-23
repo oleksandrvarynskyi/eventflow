@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.event.publicSlug",
+    "label": "Add column \"publicSlug\" to \"event\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "publicSlug",
+        "table": "event"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"publicSlug\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "event",
+          "publicSlug"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"publicSlug\"",
+        "sql": "ALTER TABLE \"public\".\"event\" ADD COLUMN \"publicSlug\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"publicSlug\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "event",
+          "publicSlug"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.event.event_publicSlug_key",
+    "label": "Add unique constraint on \"event\" (publicSlug)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "event_publicSlug_key",
+        "table": "event"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"event_publicSlug_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "event_publicSlug_key",
+          "public",
+          "\"public\".\"event\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"event_publicSlug_key\"",
+        "sql": "ALTER TABLE \"public\".\"event\" ADD CONSTRAINT \"event_publicSlug_key\" UNIQUE (\"publicSlug\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"event_publicSlug_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "event_publicSlug_key",
+          "public",
+          "\"public\".\"event\""
+        ]
+      }
+    ]
+  }
+]

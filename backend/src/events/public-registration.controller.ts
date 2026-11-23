@@ -14,7 +14,7 @@ import { EmailService } from '../email/email.service.js';
 import { randomUUID } from 'node:crypto';
 import { db } from '../prisma/db.js';
 
-@Controller('events/:eventId/register')
+@Controller('events/:publicSlug/register')
 export class PublicRegistrationController {
   private readonly logger = new Logger(PublicRegistrationController.name);
 
@@ -22,7 +22,7 @@ export class PublicRegistrationController {
 
   @Post()
   async register(
-    @Param('eventId', ParseIntPipe) eventId: number,
+    @Param('publicSlug') publicSlug: string,
     @Body()
     body: {
       firstName: string;
@@ -42,11 +42,14 @@ export class PublicRegistrationController {
 
     // Check that the event exists
     const events = await db.orm.public.Event.all();
-    const event = events.find((item) => item.id === eventId);
+
+    const event = events.find((item) => item.publicSlug === publicSlug);
 
     if (!event) {
       throw new NotFoundException('Event not found');
     }
+
+    const eventId = event.id;
 
     // Prevent duplicate registrations
     const attendees = await db.orm.public.Attendee.all();

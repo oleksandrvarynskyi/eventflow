@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'622fe83f480f6fa6f508cd0b58e8c2e2bcff64a64c50d1392017f24ba67baade'>;
+  StorageHashBase<'9ef0d02943b1fa23a6d40abb192630ee6895da4e5fcb865fa3b1d66574a54021'>;
 export type ExecutionHash =
   ExecutionHashBase<'75039d551cfe3f276db5955e67d9003e2123d5d3c7dc9228426853d04a45b375'>;
 export type ProfileHash =
@@ -255,6 +255,7 @@ export type FieldOutputTypes = {
     };
     readonly Event: {
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly publicSlug: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly location: CodecTypes['pg/text@1']['output'] | null;
@@ -304,6 +305,7 @@ export type FieldInputTypes = {
     };
     readonly Event: {
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly publicSlug: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly location: CodecTypes['pg/text@1']['input'] | null;
@@ -359,6 +361,7 @@ export type StorageColumnTypes = {
       readonly location: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly organizationId: CodecTypes['pg/int4@1']['output'];
+      readonly publicSlug: CodecTypes['pg/text@1']['output'] | null;
       readonly startsAt: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
@@ -408,6 +411,7 @@ export type StorageColumnInputTypes = {
       readonly location: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly organizationId: CodecTypes['pg/int4@1']['input'];
+      readonly publicSlug: CodecTypes['pg/text@1']['input'] | null;
       readonly startsAt: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
@@ -464,6 +468,7 @@ export namespace Models {
   };
   export type public_Event = {
     id: CodecTypes['pg/int4@1']['output'];
+    publicSlug: CodecTypes['pg/text@1']['output'] | null;
     name: CodecTypes['pg/text@1']['output'];
     description: CodecTypes['pg/text@1']['output'] | null;
     location: CodecTypes['pg/text@1']['output'] | null;
@@ -617,6 +622,11 @@ type ContractBase = Omit<
                     readonly expression: 'autoincrement()';
                   };
                 };
+                readonly publicSlug: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
                 readonly name: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -660,7 +670,7 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
+              uniques: readonly [{ readonly columns: readonly ['publicSlug'] }];
               indexes: readonly [
                 {
                   readonly name: 'event_organizationId_idx_2e17ef41';
@@ -990,6 +1000,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly publicSlug: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
               readonly name: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -1076,6 +1090,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly id: { readonly column: 'id' };
+                readonly publicSlug: { readonly column: 'publicSlug' };
                 readonly name: { readonly column: 'name' };
                 readonly description: { readonly column: 'description' };
                 readonly location: { readonly column: 'location' };

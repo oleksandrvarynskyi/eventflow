@@ -13,8 +13,8 @@ type PublicEvent = {
 };
 
 export default function RegistrationPage() {
-  const params = useParams<{ eventId: string }>();
-  const eventId = params.eventId;
+  const params = useParams<{ publicSlug: string }>();
+  const publicSlug = params.publicSlug;
 
   const [event, setEvent] = useState<PublicEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function RegistrationPage() {
   useEffect(() => {
     async function loadEvent() {
       try {
-        const response = await fetch(`/api/public/events/${eventId}`, {
+        const response = await fetch(`/api/public/events/${publicSlug}`, {
           cache: "no-store",
         });
 
@@ -49,7 +49,7 @@ export default function RegistrationPage() {
     }
 
     void loadEvent();
-  }, [eventId]);
+  }, [publicSlug]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -60,17 +60,20 @@ export default function RegistrationPage() {
     setSubmitError("");
 
     try {
-      const response = await fetch(`/api/public/events/${eventId}/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `/api/public/events/${publicSlug}/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: email.trim(),
+          }),
         },
-        body: JSON.stringify({
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim(),
-        }),
-      });
+      );
 
       const data = await response.json();
 

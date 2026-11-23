@@ -14,6 +14,7 @@ type Attendee = {
 
 type Event = {
   id: number;
+  publicSlug: string | null;
   name: string;
   description: string | null;
   location: string | null;
@@ -54,6 +55,32 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
   const [resendingId, setResendingId] = useState<number | null>(null);
   const [resendMessage, setResendMessage] = useState("");
   const [resendError, setResendError] = useState(false);
+
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
+
+  async function handleCopyRegistrationLink() {
+    const selectedEvent = events.find((event) => event.id === eventId);
+
+    if (!selectedEvent?.publicSlug) {
+      setCopyError("Registration link is unavailable");
+      return;
+    }
+
+    const registrationUrl = `${window.location.origin}/register/${selectedEvent.publicSlug}`;
+
+    try {
+      await navigator.clipboard.writeText(registrationUrl);
+
+      setLinkCopied(true);
+      setCopyError("");
+
+      setTimeout(() => setLinkCopied(false), 2500);
+    } catch {
+      setLinkCopied(false);
+      setCopyError("Failed to copy registration link");
+    }
+  }
 
   // Load events
   useEffect(() => {
@@ -265,9 +292,26 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
                 Event Details
               </p>
 
-              <h1 className="text-3xl font-bold text-white">
-                {selectedEvent.name}
-              </h1>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <h1 className="text-3xl font-bold text-white">
+                  {selectedEvent.name}
+                </h1>
+
+                <button
+                  type="button"
+                  onClick={() => void handleCopyRegistrationLink()}
+                  disabled={!selectedEvent.publicSlug}
+                  className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {linkCopied ? "✓ Copied!" : "🔗 Copy Registration Link"}
+                </button>
+              </div>
+
+              {copyError && (
+                <p role="alert" className="mt-2 text-sm text-red-400">
+                  {copyError}
+                </p>
+              )}
 
               <div className="mt-3 flex flex-wrap gap-4 text-sm text-slate-400">
                 <span>

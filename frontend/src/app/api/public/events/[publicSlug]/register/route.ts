@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 
 type RouteContext = {
-  params: Promise<{ eventId: string }>;
+  params: Promise<{ publicSlug: string }>;
 };
 
 export async function POST(request: Request, context: RouteContext) {
-  const { eventId } = await context.params;
+  const { publicSlug } = await context.params;
 
-  if (!/^[1-9]\d*$/.test(eventId)) {
-    return NextResponse.json({ message: "Invalid event ID" }, { status: 400 });
+  if (!/^[A-Za-z0-9_-]{24}$/.test(publicSlug)) {
+    return NextResponse.json(
+      { message: "Invalid registration link" },
+      { status: 400 },
+    );
   }
 
   const backendUrl = process.env.BACKEND_API_URL;
@@ -29,14 +32,17 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   try {
-    const response = await fetch(`${backendUrl}/events/${eventId}/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${backendUrl}/events/${publicSlug}/register`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
       },
-      body: JSON.stringify(body),
-      cache: "no-store",
-    });
+    );
 
     const data = await response.json();
 
