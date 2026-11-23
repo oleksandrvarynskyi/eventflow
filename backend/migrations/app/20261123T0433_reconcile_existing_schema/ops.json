@@ -1,1 +1,678 @@
-[]
+[
+  {
+    "id": "dropCheckConstraint.user.user_role_check_4f4846ff",
+    "label": "Drop check constraint \"user_role_check_4f4846ff\" on \"user\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "user_role_check_4f4846ff",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"user_role_check_4f4846ff\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_role_check_4f4846ff",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop check constraint \"user_role_check_4f4846ff\"",
+        "sql": "ALTER TABLE \"public\".\"user\" DROP CONSTRAINT \"user_role_check_4f4846ff\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"user_role_check_4f4846ff\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_role_check_4f4846ff",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.userEvent",
+    "label": "Create table \"userEvent\"",
+    "summary": "Creates table \"userEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "userEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"userEvent\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"userEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"userEvent\"",
+        "sql": "CREATE TABLE \"public\".\"userEvent\" (\n  \"eventId\" int4 NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"userId\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"userEvent\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"userEvent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.user.isActive",
+    "label": "Add column \"isActive\" to \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "isActive",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"isActive\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "isActive"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"isActive\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD COLUMN \"isActive\" bool DEFAULT true NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"isActive\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "isActive"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.user.passwordHash",
+    "label": "Add column \"passwordHash\" to \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "passwordHash",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"passwordHash\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "passwordHash"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"passwordHash\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD COLUMN \"passwordHash\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"passwordHash\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "passwordHash"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.user.passwordHash",
+    "label": "Set NOT NULL on \"user\".\"passwordHash\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "passwordHash",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"passwordHash\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "passwordHash"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"passwordHash\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"user\" WHERE \"passwordHash\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"passwordHash\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ALTER COLUMN \"passwordHash\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"passwordHash\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "passwordHash",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.user.username",
+    "label": "Add column \"username\" to \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "username",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"username\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "username"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"username\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD COLUMN \"username\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"username\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "username"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.user.username",
+    "label": "Set NOT NULL on \"user\".\"username\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "username",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"username\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "username"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"username\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"user\" WHERE \"username\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"username\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ALTER COLUMN \"username\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"username\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "username",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.user.email",
+    "label": "Drop NOT NULL on \"user\".\"email\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "email",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"email\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "email"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"email\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ALTER COLUMN \"email\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"email\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "email",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "setDefault.user.role",
+    "label": "Set default on \"user\".\"role\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "role",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"role\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "role"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "set default on \"role\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ALTER COLUMN \"role\" SET DEFAULT 'ORGANIZER'"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"role\" has a default",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"column_default\" IS NOT NULL)) AS \"result\"",
+        "params": [
+          "public",
+          "user",
+          "role"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "checkConstraint.user.user_role_check_e0406534",
+    "label": "Add check constraint \"user_role_check_e0406534\" on \"user\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "checkConstraint",
+        "name": "user_role_check_e0406534",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"user_role_check_e0406534\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_role_check_e0406534",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add check constraint \"user_role_check_e0406534\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD CONSTRAINT \"user_role_check_e0406534\" CHECK (\"role\" IN ('ADMIN', 'ORGANIZER', 'RECEPTION'))"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"user_role_check_e0406534\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_role_check_e0406534",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.user.user_username_key",
+    "label": "Add unique constraint on \"user\" (username)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "user_username_key",
+        "table": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"user_username_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_username_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"user_username_key\"",
+        "sql": "ALTER TABLE \"public\".\"user\" ADD CONSTRAINT \"user_username_key\" UNIQUE (\"username\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"user_username_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "user_username_key",
+          "public",
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.userEvent.userEvent_userId_eventId_key",
+    "label": "Add unique constraint on \"userEvent\" (userId, eventId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "userEvent_userId_eventId_key",
+        "table": "userEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"userEvent_userId_eventId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "userEvent_userId_eventId_key",
+          "public",
+          "\"public\".\"userEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"userEvent_userId_eventId_key\"",
+        "sql": "ALTER TABLE \"public\".\"userEvent\" ADD CONSTRAINT \"userEvent_userId_eventId_key\" UNIQUE (\"userId\", \"eventId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"userEvent_userId_eventId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "userEvent_userId_eventId_key",
+          "public",
+          "\"public\".\"userEvent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.userEvent.userEvent_eventId_idx_6a266d47",
+    "label": "Create index \"userEvent_eventId_idx_6a266d47\" on \"userEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "userEvent_eventId_idx_6a266d47",
+        "table": "userEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"userEvent_eventId_idx_6a266d47\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"userEvent_eventId_idx_6a266d47\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"userEvent_eventId_idx_6a266d47\"",
+        "sql": "CREATE INDEX \"userEvent_eventId_idx_6a266d47\" ON \"public\".\"userEvent\" (\"eventId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"userEvent_eventId_idx_6a266d47\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"userEvent_eventId_idx_6a266d47\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.userEvent.userEvent_userId_idx_a489d58a",
+    "label": "Create index \"userEvent_userId_idx_a489d58a\" on \"userEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "userEvent_userId_idx_a489d58a",
+        "table": "userEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"userEvent_userId_idx_a489d58a\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"userEvent_userId_idx_a489d58a\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"userEvent_userId_idx_a489d58a\"",
+        "sql": "CREATE INDEX \"userEvent_userId_idx_a489d58a\" ON \"public\".\"userEvent\" (\"userId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"userEvent_userId_idx_a489d58a\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"userEvent_userId_idx_a489d58a\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.userEvent.userEvent_userId_fkey",
+    "label": "Add foreign key \"userEvent_userId_fkey\" on \"userEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "userEvent_userId_fkey",
+        "table": "userEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"userEvent_userId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "userEvent_userId_fkey",
+          "public",
+          "\"public\".\"userEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"userEvent_userId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"userEvent\"\nADD CONSTRAINT \"userEvent_userId_fkey\"\nFOREIGN KEY (\"userId\")\nREFERENCES \"public\".\"user\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"userEvent_userId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "userEvent_userId_fkey",
+          "public",
+          "\"public\".\"userEvent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.userEvent.userEvent_eventId_fkey",
+    "label": "Add foreign key \"userEvent_eventId_fkey\" on \"userEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "userEvent_eventId_fkey",
+        "table": "userEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"userEvent_eventId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "userEvent_eventId_fkey",
+          "public",
+          "\"public\".\"userEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"userEvent_eventId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"userEvent\"\nADD CONSTRAINT \"userEvent_eventId_fkey\"\nFOREIGN KEY (\"eventId\")\nREFERENCES \"public\".\"event\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"userEvent_eventId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "userEvent_eventId_fkey",
+          "public",
+          "\"public\".\"userEvent\""
+        ]
+      }
+    ]
+  }
+]

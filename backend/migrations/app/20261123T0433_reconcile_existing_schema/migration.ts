@@ -8,7 +8,6 @@ import {
   MigrationCLI,
   col,
   lit,
-  placeholder,
   primaryKey,
 } from '@prisma/orm-postgres/migration';
 
@@ -58,10 +57,6 @@ export default class M extends Migration<Start, End> {
           codecRef: { codecId: 'pg/text@1' },
         }),
       }),
-      this.dataTransform(endContract, 'backfill-user-passwordHash', {
-        check: () => placeholder('backfill-user-passwordHash:check'),
-        run: () => placeholder('backfill-user-passwordHash:run'),
-      }),
       this.setNotNull({
         schema: 'public',
         table: 'user',
@@ -71,10 +66,6 @@ export default class M extends Migration<Start, End> {
         schema: 'public',
         table: 'user',
         column: col('username', 'text', { codecRef: { codecId: 'pg/text@1' } }),
-      }),
-      this.dataTransform(endContract, 'backfill-user-username', {
-        check: () => placeholder('backfill-user-username:check'),
-        run: () => placeholder('backfill-user-username:run'),
       }),
       this.setNotNull({ schema: 'public', table: 'user', column: 'username' }),
       this.dropNotNull({ schema: 'public', table: 'user', column: 'email' }),
