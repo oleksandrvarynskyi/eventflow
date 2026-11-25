@@ -17,6 +17,8 @@ type Event = {
   name: string;
 };
 
+type UserRole = "ADMIN" | "ORGANIZER" | "RECEPTION";
+
 export default function CheckInHistoryPage() {
   const searchParams = useSearchParams();
   const eventIdParam = searchParams.get("eventId");
@@ -32,6 +34,32 @@ export default function CheckInHistoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const ITEMS_PER_PAGE = 10;
+
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+
+  useEffect(() => {
+    async function loadSession() {
+      try {
+        const response = await fetch("/api/auth/session", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load session");
+        }
+
+        const data = await response.json();
+
+        if (data.authenticated && data.user) {
+          setUserRole(data.user.role);
+        }
+      } catch (error) {
+        console.error("Failed to load session:", error);
+      }
+    }
+
+    void loadSession();
+  }, []);
 
   useEffect(() => {
     async function loadEvents() {
@@ -215,6 +243,8 @@ export default function CheckInHistoryPage() {
     URL.revokeObjectURL(url);
   }
 
+  const selectedEvent = events.find((event) => event.id === selectedEventId);
+
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-8 text-white md:px-8">
       <div className="mx-auto w-full max-w-[1400px]">
@@ -242,34 +272,47 @@ export default function CheckInHistoryPage() {
         </div>
 
         <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-          <label
-            htmlFor="history-event-select"
-            className="mb-2 block text-sm font-medium text-slate-400"
-          >
-            Select Event
-          </label>
+          {userRole === "ADMIN" ? (
+            <>
+              <label
+                htmlFor="history-event-select"
+                className="mb-2 block text-sm font-medium text-slate-400"
+              >
+                Select Event
+              </label>
 
-          <select
-            id="history-event-select"
-            value={selectedEventId ?? ""}
-            onChange={(e) => {
-              setSelectedEventId(Number(e.target.value));
-              setSearch("");
-              setCurrentPage(1);
-            }}
-            disabled={events.length === 0}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
-          >
-            {events.length === 0 ? (
-              <option value="">No events available</option>
-            ) : (
-              events.map((event) => (
-                <option key={event.id} value={event.id}>
-                  {event.name}
-                </option>
-              ))
-            )}
-          </select>
+              <select
+                id="history-event-select"
+                value={selectedEventId ?? ""}
+                onChange={(e) => {
+                  setSelectedEventId(Number(e.target.value));
+                  setSearch("");
+                  setCurrentPage(1);
+                }}
+                disabled={events.length === 0}
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-blue-500"
+              >
+                {events.length === 0 ? (
+                  <option value="">No events available</option>
+                ) : (
+                  events.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </>
+          ) : (
+            <>
+              <p className="mb-2 text-sm font-medium text-slate-400">Event</p>
+
+              <h2 className="text-xl font-semibold text-white">
+                {selectedEvent?.name ??
+                  (loading ? "Loading event..." : "No event available")}
+              </h2>
+            </>
+          )}
         </div>
 
         <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
