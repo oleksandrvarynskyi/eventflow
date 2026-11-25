@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Delete,
   Get,
@@ -22,8 +23,7 @@ import { db } from '../prisma/db.js';
 
 import { EmailService } from '../email/email.service.js';
 
-import { createAttendeeWithNumber } from './create-attendee.js';
-
+import { createAttendeeWithNumber, pool } from './create-attendee.js';
 import {
   AccessGuard,
   EventAccessGuard,
@@ -115,7 +115,7 @@ export class AttendeesController {
   ) {
     const firstName = body?.firstName?.trim();
     const lastName = body?.lastName?.trim();
-    const email = body?.email?.trim();
+    const email = body?.email?.trim().toLowerCase();
 
     if (!firstName || !lastName || !email) {
       throw new BadRequestException(
@@ -133,14 +133,56 @@ export class AttendeesController {
       throw new NotFoundException('Attendee not found');
     }
 
-    return db.orm.public.Attendee.where({
-      id: attendeeId,
-      eventId,
-    }).update({
-      firstName,
-      lastName,
-      email,
-    });
+    const duplicate = attendees.some(
+      (item) =>
+        item.eventId === eventId &&
+        item.id !== attendeeId &&
+        item.email.trim().toLowerCase() === email,
+    );
+
+    if (duplicate) {
+      throw new ConflictException(
+        'This email is already registered for this event',
+      );
+    }
+
+    try {
+      const result = await pool.query(
+        `
+    UPDATE public.attendee
+    SET
+      "firstName" = $1,
+      "lastName" = $2,
+      "email" = $3,
+      "updatedAt" = NOW()
+    WHERE id = $4 AND "eventId" = $5
+    RETURNING *
+    `,
+        [firstName, lastName, email, attendeeId, eventId],
+      );
+
+      if (result.rowCount === 0) {
+        throw new NotFoundException('Attendee not found');
+      }
+
+      return result.rows[0];
+    } catch (error) {
+      const dbError = error as {
+        code?: string;
+        constraint?: string;
+      };
+
+      if (
+        dbError.code === '23505' &&
+        dbError.constraint === 'attendee_eventId_email_key'
+      ) {
+        throw new ConflictException(
+          'This email is already registered for this event',
+        );
+      }
+
+      throw error;
+    }
   }
 
   // GET /api/events/:eventId/attendees/:attendeeId/qr

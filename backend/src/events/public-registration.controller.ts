@@ -1,9 +1,9 @@
 import {
   BadRequestException,
+  ConflictException,
   Controller,
   NotFoundException,
   Param,
-  ParseIntPipe,
   Post,
   Body,
 } from '@nestjs/common';
@@ -62,7 +62,7 @@ export class PublicRegistrationController {
     );
 
     if (alreadyRegistered) {
-      throw new BadRequestException(
+      throw new ConflictException(
         'This email is already registered for this event',
       );
     }

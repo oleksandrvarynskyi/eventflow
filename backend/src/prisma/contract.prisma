@@ -67,6 +67,7 @@ model Attendee {
   createdAt         TimestamptzString @default(now())
   updatedAt         temporal.updatedAtString()
   @@unique([eventId, registrationNumber])
+  @@unique([eventId, email])
 }
 
 model UserEvent {

@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 
-const pool = new Pool({
+export const pool = new Pool({
   connectionString: process.env['DATABASE_URL'],
 });
 
@@ -55,7 +55,7 @@ export async function createAttendeeWithNumber(data: CreateAttendeeInput) {
       [
         data.firstName,
         data.lastName,
-        data.email,
+        data.email.trim().toLowerCase(),
         data.eventId,
         data.registrationToken,
         registrationNumber,
@@ -67,6 +67,21 @@ export async function createAttendeeWithNumber(data: CreateAttendeeInput) {
     return attendeeResult.rows[0];
   } catch (error) {
     await client.query('ROLLBACK');
+
+    const dbError = error as {
+      code?: string;
+      constraint?: string;
+    };
+
+    if (
+      dbError.code === '23505' &&
+      dbError.constraint === 'attendee_eventId_email_key'
+    ) {
+      throw new ConflictException(
+        'This email is already registered for this event',
+      );
+    }
+
     throw error;
   } finally {
     client.release();
