@@ -7,6 +7,7 @@ import EventsTable from "@/components/EventsTable";
 
 type Attendee = {
   id: number;
+  registrationNumber: number;
   firstName: string;
   lastName: string;
   email: string;

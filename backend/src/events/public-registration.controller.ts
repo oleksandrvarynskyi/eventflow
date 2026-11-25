@@ -14,6 +14,8 @@ import { EmailService } from '../email/email.service.js';
 import { randomUUID } from 'node:crypto';
 import { db } from '../prisma/db.js';
 
+import { createAttendeeWithNumber } from '../attendees/create-attendee.js';
+
 @Controller('events/:publicSlug/register')
 export class PublicRegistrationController {
   private readonly logger = new Logger(PublicRegistrationController.name);
@@ -69,7 +71,7 @@ export class PublicRegistrationController {
     const registrationToken = randomUUID();
 
     // Save registration
-    const attendee = await db.orm.public.Attendee.create({
+    const attendee = await createAttendeeWithNumber({
       firstName,
       lastName,
       email,

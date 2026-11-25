@@ -99,6 +99,13 @@
                   "kind": "scalar"
                 }
               },
+              "registrationNumber": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "registrationToken": {
                 "nullable": true,
                 "type": {
@@ -155,6 +162,9 @@
                 "lastName": {
                   "column": "lastName"
                 },
+                "registrationNumber": {
+                  "column": "registrationNumber"
+                },
                 "registrationToken": {
                   "column": "registrationToken"
                 },
@@ -207,6 +217,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "nextRegistrationNumber": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -306,6 +323,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "nextRegistrationNumber": {
+                  "column": "nextRegistrationNumber"
                 },
                 "organizationId": {
                   "column": "organizationId"
@@ -683,6 +703,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "registrationNumber": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
                 "registrationToken": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -732,6 +757,12 @@
                   "columns": [
                     "registrationToken"
                   ]
+                },
+                {
+                  "columns": [
+                    "eventId",
+                    "registrationNumber"
+                  ]
                 }
               ]
             },
@@ -773,6 +804,15 @@
                 "name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": false
+                },
+                "nextRegistrationNumber": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 1
+                  },
+                  "nativeType": "int4",
                   "nullable": false
                 },
                 "organizationId": {
@@ -1109,7 +1149,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "9ef0d02943b1fa23a6d40abb192630ee6895da4e5fcb865fa3b1d66574a54021"
+    "storageHash": "ca4d38ab968e436c61bf1b101d9a5c1222e9ddddcb067bd1a9d9b408997b025c"
   },
   "execution": {
     "executionHash": "75039d551cfe3f276db5955e67d9003e2123d5d3c7dc9228426853d04a45b375",

@@ -6,6 +6,7 @@ import EditAttendeeModal from "@/components/EditAttendeeModal";
 
 type Attendee = {
   id: number;
+  registrationNumber: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -399,7 +400,7 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
               <table className="w-full min-w-[700px] text-left text-sm">
                 <thead className="border-b border-slate-700 text-slate-400">
                   <tr>
-                    <th className="px-4 py-3 font-medium">ID</th>
+                    <th className="px-4 py-3 font-medium">#</th>
                     <th className="px-4 py-3 font-medium">Name</th>
                     <th className="px-4 py-3 font-medium">Email</th>
                     <th className="px-4 py-3 font-medium">Status</th>
@@ -416,7 +417,7 @@ export default function EventDetails({ eventId, role = "ADMIN" }: Props) {
                       className="border-b border-slate-800 transition hover:bg-slate-800/50"
                     >
                       <td className="px-4 py-4 text-slate-400">
-                        {attendee.id}
+                        {attendee.registrationNumber}
                       </td>
 
                       <td className="px-4 py-4 font-medium">

@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'9ef0d02943b1fa23a6d40abb192630ee6895da4e5fcb865fa3b1d66574a54021'>;
+  StorageHashBase<'ca4d38ab968e436c61bf1b101d9a5c1222e9ddddcb067bd1a9d9b408997b025c'>;
 export type ExecutionHash =
   ExecutionHashBase<'75039d551cfe3f276db5955e67d9003e2123d5d3c7dc9228426853d04a45b375'>;
 export type ProfileHash =
@@ -244,6 +244,7 @@ export type FieldOutputTypes = {
   readonly public: {
     readonly Attendee: {
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly registrationNumber: CodecTypes['pg/int4@1']['output'];
       readonly firstName: CodecTypes['pg/text@1']['output'];
       readonly lastName: CodecTypes['pg/text@1']['output'];
       readonly email: CodecTypes['pg/text@1']['output'];
@@ -256,6 +257,7 @@ export type FieldOutputTypes = {
     readonly Event: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly publicSlug: CodecTypes['pg/text@1']['output'] | null;
+      readonly nextRegistrationNumber: CodecTypes['pg/int4@1']['output'];
       readonly name: CodecTypes['pg/text@1']['output'];
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly location: CodecTypes['pg/text@1']['output'] | null;
@@ -294,6 +296,7 @@ export type FieldInputTypes = {
   readonly public: {
     readonly Attendee: {
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly registrationNumber: CodecTypes['pg/int4@1']['input'];
       readonly firstName: CodecTypes['pg/text@1']['input'];
       readonly lastName: CodecTypes['pg/text@1']['input'];
       readonly email: CodecTypes['pg/text@1']['input'];
@@ -306,6 +309,7 @@ export type FieldInputTypes = {
     readonly Event: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly publicSlug: CodecTypes['pg/text@1']['input'] | null;
+      readonly nextRegistrationNumber: CodecTypes['pg/int4@1']['input'];
       readonly name: CodecTypes['pg/text@1']['input'];
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly location: CodecTypes['pg/text@1']['input'] | null;
@@ -350,6 +354,7 @@ export type StorageColumnTypes = {
       readonly firstName: CodecTypes['pg/text@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly lastName: CodecTypes['pg/text@1']['output'];
+      readonly registrationNumber: CodecTypes['pg/int4@1']['output'];
       readonly registrationToken: CodecTypes['pg/text@1']['output'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['output'];
     };
@@ -360,6 +365,7 @@ export type StorageColumnTypes = {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly location: CodecTypes['pg/text@1']['output'] | null;
       readonly name: CodecTypes['pg/text@1']['output'];
+      readonly nextRegistrationNumber: CodecTypes['pg/int4@1']['output'];
       readonly organizationId: CodecTypes['pg/int4@1']['output'];
       readonly publicSlug: CodecTypes['pg/text@1']['output'] | null;
       readonly startsAt: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -400,6 +406,7 @@ export type StorageColumnInputTypes = {
       readonly firstName: CodecTypes['pg/text@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly lastName: CodecTypes['pg/text@1']['input'];
+      readonly registrationNumber: CodecTypes['pg/int4@1']['input'];
       readonly registrationToken: CodecTypes['pg/text@1']['input'] | null;
       readonly updatedAt: CodecTypes['pg/timestamptz-string@1']['input'];
     };
@@ -410,6 +417,7 @@ export type StorageColumnInputTypes = {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly location: CodecTypes['pg/text@1']['input'] | null;
       readonly name: CodecTypes['pg/text@1']['input'];
+      readonly nextRegistrationNumber: CodecTypes['pg/int4@1']['input'];
       readonly organizationId: CodecTypes['pg/int4@1']['input'];
       readonly publicSlug: CodecTypes['pg/text@1']['input'] | null;
       readonly startsAt: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -469,6 +477,7 @@ export namespace Models {
   export type public_Event = {
     id: CodecTypes['pg/int4@1']['output'];
     publicSlug: CodecTypes['pg/text@1']['output'] | null;
+    nextRegistrationNumber: CodecTypes['pg/int4@1']['output'];
     name: CodecTypes['pg/text@1']['output'];
     description: CodecTypes['pg/text@1']['output'] | null;
     location: CodecTypes['pg/text@1']['output'] | null;
@@ -484,6 +493,7 @@ export namespace Models {
   };
   export type public_Attendee = {
     id: CodecTypes['pg/int4@1']['output'];
+    registrationNumber: CodecTypes['pg/int4@1']['output'];
     firstName: CodecTypes['pg/text@1']['output'];
     lastName: CodecTypes['pg/text@1']['output'];
     email: CodecTypes['pg/text@1']['output'];
@@ -544,6 +554,11 @@ type ContractBase = Omit<
                     readonly expression: 'autoincrement()';
                   };
                 };
+                readonly registrationNumber: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
                 readonly firstName: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
@@ -587,7 +602,10 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [{ readonly columns: readonly ['registrationToken'] }];
+              uniques: readonly [
+                { readonly columns: readonly ['registrationToken'] },
+                { readonly columns: readonly ['eventId', 'registrationNumber'] },
+              ];
               indexes: readonly [
                 {
                   readonly name: 'attendee_eventId_idx_6a266d47';
@@ -626,6 +644,15 @@ type ContractBase = Omit<
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: true;
+                };
+                readonly nextRegistrationNumber: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 1>;
+                  };
                 };
                 readonly name: {
                   readonly nativeType: 'text';
@@ -922,6 +949,10 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly registrationNumber: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
               readonly firstName: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -983,6 +1014,7 @@ type ContractBase = Omit<
               readonly namespaceId: 'public';
               readonly fields: {
                 readonly id: { readonly column: 'id' };
+                readonly registrationNumber: { readonly column: 'registrationNumber' };
                 readonly firstName: { readonly column: 'firstName' };
                 readonly lastName: { readonly column: 'lastName' };
                 readonly email: { readonly column: 'email' };
@@ -1003,6 +1035,10 @@ type ContractBase = Omit<
               readonly publicSlug: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly nextRegistrationNumber: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly name: {
                 readonly nullable: false;
@@ -1091,6 +1127,7 @@ type ContractBase = Omit<
               readonly fields: {
                 readonly id: { readonly column: 'id' };
                 readonly publicSlug: { readonly column: 'publicSlug' };
+                readonly nextRegistrationNumber: { readonly column: 'nextRegistrationNumber' };
                 readonly name: { readonly column: 'name' };
                 readonly description: { readonly column: 'description' };
                 readonly location: { readonly column: 'location' };

@@ -22,6 +22,8 @@ import { db } from '../prisma/db.js';
 
 import { EmailService } from '../email/email.service.js';
 
+import { createAttendeeWithNumber } from './create-attendee.js';
+
 import {
   AccessGuard,
   EventAccessGuard,
@@ -58,7 +60,7 @@ export class AttendeesController {
     const registrationToken = randomUUID();
 
     // 1. Save attendee
-    const attendee = await db.orm.public.Attendee.create({
+    const attendee = await createAttendeeWithNumber({
       firstName: body.firstName,
       lastName: body.lastName,
       email: body.email,
