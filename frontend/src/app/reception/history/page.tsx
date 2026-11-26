@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 type Attendee = {
   id: number;
+  registrationNumber: number;
   firstName: string;
   lastName: string;
   email: string;
@@ -196,8 +197,13 @@ export default function CheckInHistoryPage() {
     if (checkInHistory.length === 0 || selectedEventId === null) {
       return;
     }
-
-    const headers = ["ID", "First Name", "Last Name", "Email", "Check-in Time"];
+    const headers = [
+      "Registration Number",
+      "First Name",
+      "Last Name",
+      "Email",
+      "Check-in Time",
+    ];
 
     const escapeCSV = (value: string | number) => {
       const text = String(value);
@@ -209,7 +215,7 @@ export default function CheckInHistoryPage() {
     };
 
     const rows = checkInHistory.map((attendee) => [
-      attendee.id,
+      attendee.registrationNumber,
       attendee.firstName,
       attendee.lastName,
       attendee.email,
@@ -398,6 +404,7 @@ export default function CheckInHistoryPage() {
               <table className="w-full min-w-[650px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-700 text-slate-400">
+                    <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">Attendee</th>
                     <th className="px-4 py-3">Email</th>
                     <th className="px-4 py-3">Check-in Time</th>
@@ -410,6 +417,9 @@ export default function CheckInHistoryPage() {
                       key={attendee.id}
                       className="border-b border-slate-800 last:border-0"
                     >
+                      <td className="px-4 py-4 font-medium text-slate-400">
+                        {attendee.registrationNumber}
+                      </td>
                       <td className="px-4 py-4 font-medium">
                         {attendee.firstName} {attendee.lastName}
                       </td>

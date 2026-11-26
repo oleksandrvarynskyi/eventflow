@@ -21,6 +21,7 @@ export class ReceptionAttendeesController {
       .filter((item) => item.eventId === eventId)
       .map((item) => ({
         id: item.id,
+        registrationNumber: item.registrationNumber,
         firstName: item.firstName,
         lastName: item.lastName,
         email: item.email,
